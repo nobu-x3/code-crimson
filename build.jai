@@ -1,5 +1,4 @@
 build :: (){
-    set_build_options_dc(.{do_output=false});
     make_directory_if_it_does_not_exist("bin");
     {
         w := compiler_create_workspace("Code Crimson");
@@ -13,8 +12,8 @@ build :: (){
         options.output_executable_name = "code-crimson";
         set_build_options(options, w);
         add_build_file("./src/main.jai", w);
-        print("This one compiled.");
     }
+    set_build_options_dc(.{do_output=false});
 }
 
 #run build();
