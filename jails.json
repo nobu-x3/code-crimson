@@ -1,0 +1,12 @@
+{
+    "local_modules": [
+        "modules",
+        "/home/nobu/jai/modules"
+    ],
+    "roots": [
+        "build.jai",
+        "src/main.jai"
+    ],
+    "build_root": "build.jai"
+}
+

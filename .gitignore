@@ -1,5 +1,2 @@
-*.exe
-*.pdb
-*.spv
 bin
-odin-ctx
+.build
