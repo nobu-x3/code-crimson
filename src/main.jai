@@ -3,7 +3,6 @@
 #import "Thread";
 #import "System";
 #import "Window_Creation";
-#import "Window_Type";
 #import "Input";
 #load "core/logger.jai";
 
@@ -12,6 +11,7 @@ DEBUG :: true;  // :DebugDisabled
 
 Vulkan_Context :: struct {
     instance : VkInstance;
+    surface : VkSurfaceKHR;
     #if DEBUG {
         vkDestroyDebugReportCallbackEXT : PFN_vkDestroyDebugReportCallbackEXT ;
         debug_callback : PFN_vkDebugReportCallbackEXT; 
@@ -107,6 +107,13 @@ main :: () {
     }
     defer vulkan_deinit(vulkan_context.instance);
     window := create_window(WINDOW_WIDTH, WINDOW_HEIGHT, "Code Crimson");
+    surface_ci : VkXlibSurfaceCreateInfoKHR;
+    surface_ci.window = window;
+    surface_result := vkCreateXlibSurfaceKHR(vulkan_context.instance, *surface_ci, null, *vulkan_context.surface);
+    if !surface_result {
+        log(logger, .FATAL, "Failed to create xlib surface.");
+        return;
+    }
     print_available_vulkan_extensions();
     exit := false;
     while !exit {
