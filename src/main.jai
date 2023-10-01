@@ -84,27 +84,48 @@ print_proc :: (group: *Thread_Group, thread: *Thread, work: *void) -> Thread_Con
     return .CONTINUE;
 }
 
+t1_status := true;
+t1_proc :: (thread : *Thread) -> s64 {
+    logger := cast(*Logger)thread.data;
+    counter := 0;
+    while t1_status {
+        log(logger, .DEBUG, "Hello from THREAD %1 - %2", context.thread_index, counter);
+        counter += 1;
+    }
+    return 0;
+}
+
 main :: () {
-    logger := logger_init();
+    logger := logger_init(0);
     defer logger_deinit(logger);
+    t1 : Thread;
+    t1.data = logger;
+    t1.index = 1;
+    thread_init(*t1, t1_proc);
+    thread_start(*t1);
+    defer thread_deinit(*t1);
     window, window_ok := create_window();
     if !window_ok return;
     print_available_vulkan_extensions();
     exit := false;
+    frame_count := 0;
     while !exit {
+        defer frame_count += 1;
         event : SDL_Event;
         while SDL_PollEvent(*event) {
             if event.type == {
                 case SDL_QUIT;
                     exit = true;
                 case SDL_KEYUP;
-                    if event.key.keysym.sym == SDLK_ESCAPE exit = true;
+                    if event.key.keysym.sym == SDLK_ESCAPE {
+                        exit = true;
+                        t1_status = false;
+                    }
             }
         }
-        log(logger, "Hello");
-        log(logger, ", ");
-        log(logger, "Sailor!\n");
+        log(logger, .DEBUG, "Hello % %", frame_count, frame_count);
         SDL_Delay(1);
+        reset_temporary_storage();
     }
 
     // Close and destroy the window

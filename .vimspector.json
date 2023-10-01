@@ -2,7 +2,7 @@
   "configurations": {
     "launch": {
       "adapter": "CodeLLDB",
-      "filetypes": [ "odin" ],
+      "filetypes": [ "jai" ],
       "configuration": {
         "request": "launch",
         "program": "${workspaceRoot}/bin/code-crimson",
