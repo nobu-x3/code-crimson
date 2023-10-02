@@ -22,9 +22,9 @@ main :: () {
     if !surface_res {
         return;
     }
+    log(.INFO, "Vulkan surface successfully created.");
     dev_res := vulkan_device_create(*vulkan_context);
     if !dev_res return;
-    log(.INFO, "Vulkan surface successfully created.");
     exit := false;
     while !exit {
         update_window_events();
