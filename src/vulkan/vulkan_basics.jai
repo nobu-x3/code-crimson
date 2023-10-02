@@ -97,6 +97,7 @@ vulkan_surface_create :: (vulkan_context: *Vulkan_Context, window: Window) -> bo
     #if OS == .LINUX {
         surface_ci : VkXlibSurfaceCreateInfoKHR;
         surface_ci.window = window;
+        surface_ci.dpy = x_global_display;
         surface_result := vkCreateXlibSurfaceKHR(vulkan_context.instance, *surface_ci, null, *vulkan_context.surface);
         log(.INFO, "Surface result: %", surface_result);
         if surface_result != .SUCCESS {
