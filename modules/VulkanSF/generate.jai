@@ -12,7 +12,7 @@ vulkan_h_location :: "source/vulkan.h";
 #if OS == .WINDOWS {
     vulkan_lib_path :: "win";
 }  else {
-    vulkan_lib_path :: "";
+    vulkan_lib_path :: "/home/nobu/vulkanSDK/x86_64/lib/libvulkan.so.1.3.261";
 }
 
 
@@ -239,6 +239,7 @@ VULKAN_FOOTER :: #string END
     libvulkan :: #library "win/vulkan-1";
 } else #if OS == .LINUX {
     libvulkan :: #system_library "libvulkan.so.1";
+    #import "X11";
 } else {
     #assert(false);
 }

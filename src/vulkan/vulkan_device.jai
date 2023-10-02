@@ -1,4 +1,5 @@
 #import "Hash_Table";
+
 vulkan_device_create :: (vulkan_context: *Vulkan_Context) -> bool #must {
     res := get_suitable_physical_device(vulkan_context);
     if !res {
@@ -48,8 +49,8 @@ print_available_vulkan_extensions :: () {
     extension_array := NewArray(extension_count, VkExtensionProperties);
     defer free(extension_array.data);
     vkEnumerateInstanceExtensionProperties(null, *extension_count, extension_array.data);
-    print("Available extensions:\n");
-    for extension_array print("    % (%)\n", to_string(it.extensionName.data), it.specVersion);
+    log(.INFO, "Available extensions:\n");
+    for extension_array log(.INFO, "    % (%)\n", to_string(it.extensionName.data), it.specVersion);
 }
 
 get_suitable_physical_device :: (vulkan_context: *Vulkan_Context) -> bool {
@@ -99,8 +100,9 @@ device_check_extension_support :: (physical_device : VkPhysicalDevice) -> bool {
             extensions[0] = VK_KHR_SURFACE_EXTENSION_NAME.data;
             extensions[1] = VK_KHR_WIN32_SURFACE_EXTENSION_NAME.data;
         } else {
-            extensions: [1] *u8;
+            extensions: [2] *u8;
             extensions[0] = VK_KHR_SURFACE_EXTENSION_NAME.data;
+            extensions[1] = VK_KHR_XLIB_SURFACE_EXTENSION_NAME.data;
         }
     } else {
         #if OS == .WINDOWS {
@@ -109,9 +111,10 @@ device_check_extension_support :: (physical_device : VkPhysicalDevice) -> bool {
             extensions[1] = VK_KHR_WIN32_SURFACE_EXTENSION_NAME.data;
             extensions[2] = VK_EXT_DEBUG_REPORT_EXTENSION_NAME.data;
         } else {
-            extensions: [2] *u8;
+            extensions: [3] *u8;
             extensions[0] = VK_KHR_SURFACE_EXTENSION_NAME.data;
-            extensions[1] = VK_EXT_DEBUG_REPORT_EXTENSION_NAME.data;
+            extensions[1] = VK_KHR_XLIB_SURFACE_EXTENSION_NAME.data;
+            extensions[2] = VK_EXT_DEBUG_REPORT_EXTENSION_NAME.data;
         }
     }
     for all_ext:extensions {
@@ -138,6 +141,7 @@ Swapchain_Description :: struct {
 device_query_swapchain_details :: (vulkan_context : *Vulkan_Context, dev: VkPhysicalDevice) -> Swapchain_Description, bool {
     desc : Swapchain_Description;
     res := vkGetPhysicalDeviceSurfaceCapabilitiesKHR(dev, vulkan_context.surface, *desc.capabilities);
+    print("Hello\nDev: %, surface: %\n", dev, vulkan_context);
     if res != .SUCCESS {
         log(.FATAL, "Failed to query physical device's surface capabilities.");
         return desc, false;

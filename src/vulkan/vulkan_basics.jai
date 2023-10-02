@@ -3,7 +3,9 @@
 #import "Input";
 #if OS ==.WINDOWS {
     #import "Windows";
-}
+} else #if OS == .LINUX {
+    #import "X11";
+} 
 #load "vulkan_device.jai";
 DEBUG :: true;  // :DebugDisabled
 WINDOW_WIDTH :: 640;
@@ -33,7 +35,7 @@ vulkan_init :: (using vulkan_context: *Vulkan_Context) -> bool {
     app_info.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
     app_info.pEngineName        = "No Engine";
     app_info.engineVersion      = VK_MAKE_VERSION(1, 0, 0);
-    app_info.apiVersion         = VK_API_VERSION_1_0;
+    app_info.apiVersion         = VK_API_VERSION_1_2;
     // Create Vulkan Instance
     create_info : VkInstanceCreateInfo;
     create_info.sType                   = .INSTANCE_CREATE_INFO;
@@ -44,8 +46,9 @@ vulkan_init :: (using vulkan_context: *Vulkan_Context) -> bool {
             extensions[0] = VK_KHR_SURFACE_EXTENSION_NAME.data;
             extensions[1] = VK_KHR_WIN32_SURFACE_EXTENSION_NAME.data;
         } else {
-            extensions: [1] *u8;
+            extensions: [2] *u8;
             extensions[0] = VK_KHR_SURFACE_EXTENSION_NAME.data;
+            extensions[1] = VK_KHR_XLIB_SURFACE_EXTENSION_NAME.data;
         }
     } else {
         #if OS == .WINDOWS {
@@ -54,9 +57,10 @@ vulkan_init :: (using vulkan_context: *Vulkan_Context) -> bool {
             extensions[1] = VK_KHR_WIN32_SURFACE_EXTENSION_NAME.data;
             extensions[2] = VK_EXT_DEBUG_REPORT_EXTENSION_NAME.data;
         } else {
-            extensions: [2] *u8;
+            extensions: [3] *u8;
             extensions[0] = VK_KHR_SURFACE_EXTENSION_NAME.data;
-            extensions[1] = VK_EXT_DEBUG_REPORT_EXTENSION_NAME.data;
+            extensions[1] = VK_KHR_XLIB_SURFACE_EXTENSION_NAME.data;
+            extensions[2] = VK_EXT_DEBUG_REPORT_EXTENSION_NAME.data;
         }
     }
     create_info.enabledExtensionCount   = extensions.count;
@@ -89,13 +93,14 @@ vulkan_deinit :: (instance: VkInstance) {
     vkDestroyInstance(instance, null);
 }
 
-vulkan_surface_create :: (vulkan_context: *Vulkan_Context, window: *void) -> bool {
+vulkan_surface_create :: (vulkan_context: *Vulkan_Context, window: Window) -> bool {
     #if OS == .LINUX {
         surface_ci : VkXlibSurfaceCreateInfoKHR;
         surface_ci.window = window;
         surface_result := vkCreateXlibSurfaceKHR(vulkan_context.instance, *surface_ci, null, *vulkan_context.surface);
-        if !surface_result {
-            log(.FATAL, "Failed to create xlib surface.");
+        log(.INFO, "Surface result: %", surface_result);
+        if surface_result != .SUCCESS {
+            log(.FATAL, "Failed to create xlib surface. Error: %", surface_result);
             return false;
         }
     } else {
@@ -106,7 +111,7 @@ vulkan_surface_create :: (vulkan_context: *Vulkan_Context, window: *void) -> boo
         surface_ci.hwnd      = my_hwnd;
         result := vkCreateWin32SurfaceKHR(vulkan_context.instance, *surface_ci, null, *vulkan_context.surface);
         if result != .SUCCESS {
-            log(.FATAL, "Failed to create windows surface.");
+            log(.FATAL, "Failed to create xlib surface. Error: %", surface_result);
             return false;
         }
     }

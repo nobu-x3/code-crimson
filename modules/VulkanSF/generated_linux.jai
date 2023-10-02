@@ -1,7 +1,7 @@
 //
 // This file was auto-generated using the following command:
 //
-// jai Vulkan/generate.jai
+// jai modules/VulkanSF/generate.jai
 //
 
 
@@ -8746,7 +8746,7 @@ vkGetPhysicalDeviceXlibPresentationSupportKHR :: (physicalDevice: VkPhysicalDevi
     libvulkan :: #library "win/vulkan-1";
 } else #if OS == .LINUX {
     libvulkan :: #system_library "libvulkan.so.1";
+    #import "X11";
 } else {
     #assert(false);
 }
-#import "X11";
