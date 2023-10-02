@@ -1,6 +1,9 @@
 #import "VulkanSF";
 #import "Window_Creation";
 #import "Input";
+#if OS ==.WINDOWS {
+    #import "Windows";
+}
 DEBUG :: true;  // :DebugDisabled
 
 
@@ -77,6 +80,30 @@ vulkan_init :: (using vulkan_context: *Vulkan_Context) -> bool {
 
 vulkan_deinit :: (instance: VkInstance) {
     vkDestroyInstance(instance, null);
+}
+
+vulkan_surface_create :: (vulkan_context: *Vulkan_Context, window: *void, logger: *Logger) -> bool {
+    #if OS == .LINUX {
+        surface_ci : VkXlibSurfaceCreateInfoKHR;
+        surface_ci.window = window;
+        surface_result := vkCreateXlibSurfaceKHR(vulkan_context.instance, *surface_ci, null, *vulkan_context.surface);
+        if !surface_result {
+            log(logger, .FATAL, "Failed to create xlib surface.");
+            return false;
+        }
+    } else {
+        my_hwnd := window;
+        surface_ci: VkWin32SurfaceCreateInfoKHR; 
+        surface_ci.sType     = .WIN32_SURFACE_CREATE_INFO_KHR;
+        surface_ci.hinstance = GetModuleHandleW(null);
+        surface_ci.hwnd      = my_hwnd;
+        result := vkCreateWin32SurfaceKHR(vulkan_context.instance, *surface_ci, null, *vulkan_context.surface);
+        if result != .SUCCESS {
+            log(logger, .FATAL, "Failed to create windows surface.");
+            return false;
+        }
+    }
+    return true;
 }
 
 WINDOW_WIDTH :: 640;
