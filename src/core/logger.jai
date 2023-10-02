@@ -9,18 +9,17 @@ Logger :: struct {
     sb : String_Builder;
 }
 
-logger_init :: (thread_index: s64) -> *Logger {
-    logger := New(Logger);
-    logger.worker.data = logger;
+logger : Logger;
+
+logger_init :: (thread_index: s64) {
     logger.sb.allocator = temp;
     thread_init(*logger.worker, logger_serialize); 
     init(*logger.notif_cv);
     init(*logger.log_mutex, "LogMutex", 1);
     thread_start(*logger.worker);
-    return logger;
 } 
 
-logger_deinit :: (logger: *Logger) {
+logger_deinit :: () {
     lock(*logger.log_mutex);
     logger.closing = true;
     wake(*logger.notif_cv);
@@ -28,11 +27,9 @@ logger_deinit :: (logger: *Logger) {
     destroy(*logger.notif_cv);
     unlock(*logger.log_mutex);
     thread_deinit(*logger.worker);
-    free(logger);
 }
 
 logger_serialize :: (thread : *Thread) -> s64 {
-    logger := cast(*Logger)thread.data;
     while true {
         lock(*logger.log_mutex);
         defer unlock(*logger.log_mutex);
@@ -60,7 +57,7 @@ Severity :: enum u8{
     FATAL;
 }
 
-log :: (logger: *Logger,severity : Severity = .INFO, format_string: string, args: .. Any) {
+log :: (severity : Severity = .INFO, format_string: string, args: .. Any) {
     lock(*logger.log_mutex);
     defer unlock(*logger.log_mutex);
     // array_add(*logger.messages, message);

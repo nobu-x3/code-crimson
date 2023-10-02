@@ -8,21 +8,21 @@
 #load "vulkan/vulkan_basics.jai";
 
 main :: () {
-    logger := logger_init(0);
-    defer logger_deinit(logger);
+    logger_init(0);
+    defer logger_deinit();
     print_available_vulkan_extensions();
     vulkan_context : Vulkan_Context;
     if !vulkan_init(*vulkan_context){
-        log(logger, .FATAL, "Failed to create vulkan instance.");
+        log(.FATAL, "Failed to create vulkan instance.");
         return;
     }
     defer vulkan_deinit(vulkan_context.instance);
     window := create_window(WINDOW_WIDTH, WINDOW_HEIGHT, "Code Crimson");
-    surface_res := vulkan_surface_create(*vulkan_context, window, logger);
+    surface_res := vulkan_surface_create(*vulkan_context, window);
     if !surface_res {
         return;
     }
-    log(logger, .INFO, "Vulkan surface successfully created.");
+    log(.INFO, "Vulkan surface successfully created.");
     exit := false;
     while !exit {
         update_window_events();
@@ -37,5 +37,5 @@ main :: () {
         }
         reset_temporary_storage();
     }
-    log(logger, .INFO, "Exited.");
+    log(.INFO, "Exited.");
 }

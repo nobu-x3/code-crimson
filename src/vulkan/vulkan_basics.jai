@@ -82,13 +82,13 @@ vulkan_deinit :: (instance: VkInstance) {
     vkDestroyInstance(instance, null);
 }
 
-vulkan_surface_create :: (vulkan_context: *Vulkan_Context, window: *void, logger: *Logger) -> bool {
+vulkan_surface_create :: (vulkan_context: *Vulkan_Context, window: *void) -> bool {
     #if OS == .LINUX {
         surface_ci : VkXlibSurfaceCreateInfoKHR;
         surface_ci.window = window;
         surface_result := vkCreateXlibSurfaceKHR(vulkan_context.instance, *surface_ci, null, *vulkan_context.surface);
         if !surface_result {
-            log(logger, .FATAL, "Failed to create xlib surface.");
+            log(.FATAL, "Failed to create xlib surface.");
             return false;
         }
     } else {
@@ -99,7 +99,7 @@ vulkan_surface_create :: (vulkan_context: *Vulkan_Context, window: *void, logger
         surface_ci.hwnd      = my_hwnd;
         result := vkCreateWin32SurfaceKHR(vulkan_context.instance, *surface_ci, null, *vulkan_context.surface);
         if result != .SUCCESS {
-            log(logger, .FATAL, "Failed to create windows surface.");
+            log(.FATAL, "Failed to create windows surface.");
             return false;
         }
     }
@@ -118,4 +118,3 @@ print_available_vulkan_extensions :: () {
     print("Available extensions:\n");
     for extension_array print("    % (%)\n", to_string(it.extensionName.data), it.specVersion);
 }
-
