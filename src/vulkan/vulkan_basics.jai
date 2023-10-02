@@ -6,25 +6,14 @@
 } else #if OS == .LINUX {
     #import "X11";
 } 
+#load "vulkan_types.jai";
 #load "vulkan_device.jai";
-DEBUG :: true;  // :DebugDisabled
+#load "vulkan_swapchain.jai";
+DEBUG :: true;  
 WINDOW_WIDTH :: 640;
 WINDOW_HEIGHT :: 480;
 
 QUEUE_COUNT :: #run enum_highest_value(Queue_Family) + 1;
-Vulkan_Context :: struct {
-    instance : VkInstance;
-    surface : VkSurfaceKHR;
-    physical_device: VkPhysicalDevice;
-    device : VkDevice;
-    queue_indices : [QUEUE_COUNT]int;
-    queues : [QUEUE_COUNT]VkQueue;
-    #if DEBUG {
-        vkDestroyDebugReportCallbackEXT : PFN_vkDestroyDebugReportCallbackEXT ;
-        debug_callback : PFN_vkDebugReportCallbackEXT; 
-        debug_callback_handle : VkDebugReportCallbackEXT;
-    }
-}
 
 vulkan_init :: (using vulkan_context: *Vulkan_Context) -> bool {
     result : VkResult = .ERROR_INITIALIZATION_FAILED;
@@ -93,10 +82,10 @@ vulkan_deinit :: (instance: VkInstance) {
     vkDestroyInstance(instance, null);
 }
 
-vulkan_surface_create :: (vulkan_context: *Vulkan_Context, window: Window) -> bool {
+vulkan_surface_create :: (vulkan_context: *Vulkan_Context) -> bool {
     #if OS == .LINUX {
         surface_ci : VkXlibSurfaceCreateInfoKHR;
-        surface_ci.window = window;
+        surface_ci.window = vulkan_context.window;
         surface_ci.dpy = x_global_display;
         surface_result := vkCreateXlibSurfaceKHR(vulkan_context.instance, *surface_ci, null, *vulkan_context.surface);
         log(.INFO, "Surface result: %", surface_result);
@@ -105,7 +94,7 @@ vulkan_surface_create :: (vulkan_context: *Vulkan_Context, window: Window) -> bo
             return false;
         }
     } else {
-        my_hwnd := window;
+        my_hwnd := vulkan_context.window;
         surface_ci: VkWin32SurfaceCreateInfoKHR; 
         surface_ci.sType     = .WIN32_SURFACE_CREATE_INFO_KHR;
         surface_ci.hinstance = GetModuleHandleW(null);

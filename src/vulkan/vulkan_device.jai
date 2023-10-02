@@ -69,8 +69,9 @@ get_suitable_physical_device :: (vulkan_context: *Vulkan_Context) -> bool {
         if props.deviceType == .DISCRETE_GPU score += 1000;
         score += cast(int)props.limits.maxImageDimension2D;
         if !device_check_extension_support(dev) return 0;
-        details, res := device_query_swapchain_details(vulkan_context, dev);
-        if !res || details.formats.count == 0 || details.present_modes.count == 0 return 0;
+        res : bool;
+        vulkan_context.swapchain.support, res = device_query_swapchain_details(vulkan_context, dev);
+        if !res || vulkan_context.swapchain.support.formats.count == 0 || vulkan_context.swapchain.support.present_modes.count == 0 return 0;
         return score;
     }
     hiscore := 0;
@@ -131,17 +132,10 @@ device_check_extension_support :: (physical_device : VkPhysicalDevice) -> bool {
     return true;
 }
 
-Swapchain_Description :: struct {
-	capabilities:  VkSurfaceCapabilitiesKHR;
-	formats:       [..]VkSurfaceFormatKHR;
-	present_modes: [..]VkPresentModeKHR;
-	depth_format:  VkFormat;
-}
 
 device_query_swapchain_details :: (vulkan_context : *Vulkan_Context, dev: VkPhysicalDevice) -> Swapchain_Description, bool {
     desc : Swapchain_Description;
     res := vkGetPhysicalDeviceSurfaceCapabilitiesKHR(dev, vulkan_context.surface, *desc.capabilities);
-    print("Hello\nDev: %, surface: %\n", dev, vulkan_context);
     if res != .SUCCESS {
         log(.FATAL, "Failed to query physical device's surface capabilities.");
         return desc, false;

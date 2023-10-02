@@ -17,14 +17,16 @@ main :: () {
         return;
     }
     defer vulkan_deinit(vulkan_context.instance);
-    window := create_window(WINDOW_WIDTH, WINDOW_HEIGHT, "Code Crimson");
-    surface_res := vulkan_surface_create(*vulkan_context, window);
-    if !surface_res {
-        return;
-    }
+    vulkan_context.window = create_window(WINDOW_WIDTH, WINDOW_HEIGHT, "Code Crimson");
+    surface_res := vulkan_surface_create(*vulkan_context);
+    if !surface_res return;
     log(.INFO, "Vulkan surface successfully created.");
     dev_res := vulkan_device_create(*vulkan_context);
     if !dev_res return;
+    log(.INFO, "Vulkan device successfully created.");
+    swapchain_res := swapchain_create(*vulkan_context);
+    if !swapchain_res return;
+    log(.INFO, "Vulkan swapchain successfully created.");
     exit := false;
     while !exit {
         update_window_events();
