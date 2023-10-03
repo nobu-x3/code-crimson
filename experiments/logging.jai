@@ -7,20 +7,18 @@
 
 t1_status := true;
 t1_proc :: (thread : *Thread) -> s64 {
-    logger := cast(*Logger)thread.data;
     counter := 0;
     while t1_status {
-        log(logger, .DEBUG, "Hello from THREAD %1 - %2", context.thread_index, counter);
+        log(.DEBUG, "Hello from THREAD %1 - %2", context.thread_index, counter);
         counter += 1;
     }
     return 0;
 }
 
 main :: () {
-    logger := logger_init(0);
-    defer logger_deinit(logger);
+    logger_init(0);
+    defer logger_deinit();
     t1 : Thread;
-    t1.data = logger;
     t1.index = 1;
     thread_init(*t1, t1_proc);
     thread_start(*t1);
@@ -54,8 +52,8 @@ main :: () {
                     }
             }
         }
-        log(logger, .DEBUG, "Hello % %", frame_count, frame_count);
-        SDL_Delay(1);
+        log(.DEBUG, "Hello % %", frame_count, frame_count);
+    
         reset_temporary_storage();
     }
 
