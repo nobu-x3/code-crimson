@@ -90,6 +90,65 @@ swapchain_create :: (using vulkan_context: *Vulkan_Context, query_swapchain_supp
     return true;
 }
 
+swapchain_cleanup :: (using vulkan_context: *Vulkan_Context) {
+    for swapchain.framebuffers {
+        vkDestroyFramebuffer(device, it.handle, null);
+    }
+    for swapchain.views {
+        vkDestroyImageView(device, it, null);
+    }
+    vkDestroySwapchainKHR(device, swapchain.handle, null);
+}
+
+swapchain_recreate :: (using vulkan_context: *Vulkan_Context) -> bool {
+    x, y, width, height, success := get_dimensions(vulkan_context.window, false);
+    if !success {
+        log(.FATAL, "Failed to acquire window dimensions.");
+        return false;
+    }
+    if width == 0 && height == 0 {
+        update_window_events();
+        x, y, width, height, success := get_dimensions(vulkan_context.window, false);
+    }
+    vkDeviceWaitIdle(device);
+    swapchain_cleanup(vulkan_context);
+    swapchain_create(vulkan_context);
+    res := create_image_views_default(vulkan_context);
+    if !res {
+        return false;
+    }
+    // @TODO: recreate_framebuffers
+    return true;
+}
+
+swapchain_acquire_next_image_index :: (vulkan_context: *Vulkan_Context, semaphore: VkSemaphore, fence: VkFence, timeout_ns: u64) -> u32, bool #must {
+    image_index : u32;
+    res := vkAcquireNextImageKHR(vulkan_context.device, vulkan_context.swapchain.handle, timeout_ns, semaphore, fence, *image_index);
+    if res == .ERROR_OUT_OF_DATE_KHR {
+        swapchain_recreate(vulkan_context);
+    } else if (res != .SUCCESS && res == .SUBOPTIMAL_KHR) {
+        log(.FATAL, "Failed to acquire the next image index.");
+        return 0, false;
+    }
+    return image_index, true;
+}
+
+swapchain_present :: (vulkan_context: *Vulkan_Context, queue: VkQueue, render_complete_semaphore: *VkSemaphore, present_image_index: *u32) {
+    present_info := VkPresentInfoKHR.
+        {
+            swapchainCount = 1, pSwapchains = *vulkan_context.swapchain.handle,
+            waitSemaphoreCount = 1, pWaitSemaphores = render_complete_semaphore,
+            pImageIndices = present_image_index
+        };
+    res := vkQueuePresentKHR(queue, *present_info);
+    if res == .ERROR_OUT_OF_DATE_KHR || res == .SUBOPTIMAL_KHR {
+        swapchain_recreate(vulkan_context);
+    } else if res != .SUCCESS {
+        log(.ERROR, "Failed to present swapchain image.");
+    }
+    vulkan_context.curr_frame = (vulkan_context.curr_frame + 1) % MAX_FRAMES_IN_FLIGHT;
+}
+
 choose_surface_format :: (using desc: Swapchain_Description) -> VkSurfaceFormatKHR {
     for formats {
         if it.format == .B8G8R8A8_SRGB && it.colorSpace == .COLORSPACE_SRGB_NONLINEAR_KHR return it;

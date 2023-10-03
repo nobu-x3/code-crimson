@@ -73,3 +73,34 @@ image_view_create :: (vulkan_context: *Vulkan_Context, format: VkFormat, aspect_
     }
     return image_view, true;
 }
+
+create_image_views_default :: (using vulkan_context: *Vulkan_Context) -> bool {
+    using vulkan_context.swapchain;
+    array_reserve(*views, images.count);
+    for images {
+        view_ci := VkImageViewCreateInfo.
+                                    {
+                                        viewType = ._2D, image = it,
+                                        format = format.format, 
+                                        subresourceRange = VkImageSubresourceRange.
+                                        {
+                                            baseMipLevel = 0, levelCount = 1, 
+                                            baseArrayLayer = 0, layerCount = 1,
+                                            aspectMask = .COLOR_BIT
+                                        },
+                                        components = VkComponentMapping.
+                                        {
+                                            r = .IDENTITY,
+                                            g = .IDENTITY,
+                                            b = .IDENTITY,
+                                            a = .IDENTITY
+                                        }
+                                    };
+        res := vkCreateImageView(device, *view_ci, null, *views.data[it_index]);
+        if res != .SUCCESS {
+            log(.FATAL, "Failed to create default image views.");
+            return false;
+        }
+    }
+    return true;
+}

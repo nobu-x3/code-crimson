@@ -26,7 +26,7 @@ main :: () {
     log(.INFO, "Vulkan device successfully created.");
     swapchain_res := swapchain_create(*vulkan_context);
     if !swapchain_res return;
-    
+    defer swapchain_cleanup(*vulkan_context);
     exit := false;
     while !exit {
         update_window_events();
