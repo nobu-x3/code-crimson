@@ -4,8 +4,24 @@ WINDOW_WIDTH :: 640;
 WINDOW_HEIGHT :: 480;
 QUEUE_COUNT :: #run enum_highest_value(Queue_Family) + 1;
 
+Color :: struct {
+    r, g, b, a: float32;
+}
+
+Extent2D :: struct {
+    x, y, w, h: float32;
+}
+
 Render_Pass_Begin_Info :: struct {
     single_use, render_pass_continue, simultaneous_use: bool;
+}
+
+Render_Pass :: struct {
+    handle: VkRenderPass;
+    depth: float32;
+    color: Color;
+    extent: Extent2D;
+    stencil: u32;
 }
 
 Swapchain_Description :: struct {
@@ -41,9 +57,6 @@ Framebuffer :: struct {
     render_pass: VkRenderPass;
 }
 
-Color :: struct {
-    r, g, b, a: float32;
-}
 Image_Info :: struct {
     image_type: VkImageType;
     width, height: u32;
@@ -73,6 +86,7 @@ Vulkan_Context :: struct {
     swapchain: Swapchain;
     command_pool: VkCommandPool;
     command_buffers: [MAX_FRAMES_IN_FLIGHT]VkCommandBuffer;
+    main_render_pass : Render_Pass;
     curr_frame : u32;
     #if DEBUG {
         vkDestroyDebugReportCallbackEXT : PFN_vkDestroyDebugReportCallbackEXT ;

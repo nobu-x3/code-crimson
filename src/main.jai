@@ -31,6 +31,11 @@ main :: () {
     if !res return;
     defer vkDestroyCommandPool(vulkan_context.device, vulkan_context.command_pool, null);
     create_command_buffers_default(*vulkan_context);
+    vulkan_context.main_render_pass, res = render_pass_create(*vulkan_context, vulkan_context.device, 
+                                            .{0, 0, 0, 1}, .{0, 0, WINDOW_WIDTH, WINDOW_HEIGHT},
+                                            1.0, 0);
+    if !res return;
+    defer render_pass_destroy(vulkan_context.device, *vulkan_context.main_render_pass);
     exit := false;
     while !exit {
         update_window_events();
