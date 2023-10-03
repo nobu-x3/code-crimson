@@ -10,6 +10,7 @@
 #load "vulkan_device.jai";
 #load "vulkan_swapchain.jai";
 #load "vulkan_image.jai";
+#load "vulkan_commands.jai";
 
 vulkan_init :: (using vulkan_context: *Vulkan_Context) -> bool {
     result : VkResult = .ERROR_INITIALIZATION_FAILED;

@@ -4,6 +4,10 @@ WINDOW_WIDTH :: 640;
 WINDOW_HEIGHT :: 480;
 QUEUE_COUNT :: #run enum_highest_value(Queue_Family) + 1;
 
+Render_Pass_Begin_Info :: struct {
+    single_use, render_pass_continue, simultaneous_use: bool;
+}
+
 Swapchain_Description :: struct {
 	capabilities:  VkSurfaceCapabilitiesKHR;
 	formats:       [..]VkSurfaceFormatKHR;
@@ -67,6 +71,8 @@ Vulkan_Context :: struct {
     queue_indices : [QUEUE_COUNT]int;
     queues : [QUEUE_COUNT]VkQueue;
     swapchain: Swapchain;
+    command_pool: VkCommandPool;
+    command_buffers: [MAX_FRAMES_IN_FLIGHT]VkCommandBuffer;
     curr_frame : u32;
     #if DEBUG {
         vkDestroyDebugReportCallbackEXT : PFN_vkDestroyDebugReportCallbackEXT ;

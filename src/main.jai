@@ -18,15 +18,19 @@ main :: () {
     }
     defer vulkan_deinit(vulkan_context.instance);
     vulkan_context.window = create_window(WINDOW_WIDTH, WINDOW_HEIGHT, "Code Crimson");
-    surface_res := vulkan_surface_create(*vulkan_context);
-    if !surface_res return;
+    res := vulkan_surface_create(*vulkan_context);
+    if !res return;
     log(.INFO, "Vulkan surface successfully created.");
-    dev_res := vulkan_device_create(*vulkan_context);
-    if !dev_res return;
+    res = vulkan_device_create(*vulkan_context);
+    if !res return;
     log(.INFO, "Vulkan device successfully created.");
-    swapchain_res := swapchain_create(*vulkan_context);
-    if !swapchain_res return;
+    res = swapchain_create(*vulkan_context);
+    if !res return;
     defer swapchain_cleanup(*vulkan_context);
+    vulkan_context.command_pool, res = command_pool_create(vulkan_context.device, cast(u32)vulkan_context.queue_indices[Queue_Family.GRAPHICS]);
+    if !res return;
+    defer vkDestroyCommandPool(vulkan_context.device, vulkan_context.command_pool, null);
+    create_command_buffers_default(*vulkan_context);
     exit := false;
     while !exit {
         update_window_events();
