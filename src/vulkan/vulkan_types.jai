@@ -1,8 +1,19 @@
+MAX_FRAMES_IN_FLIGHT :: 2;
+DEBUG :: true;  
+WINDOW_WIDTH :: 640;
+WINDOW_HEIGHT :: 480;
+QUEUE_COUNT :: #run enum_highest_value(Queue_Family) + 1;
+
 Swapchain_Description :: struct {
 	capabilities:  VkSurfaceCapabilitiesKHR;
 	formats:       [..]VkSurfaceFormatKHR;
 	present_modes: [..]VkPresentModeKHR;
 	depth_format:  VkFormat;
+}
+
+Queue_Family :: enum u8 {
+    GRAPHICS :: 0;
+    PRESENT :: 1;
 }
 
 Swapchain :: struct {
@@ -29,6 +40,16 @@ Framebuffer :: struct {
 Color :: struct {
     r, g, b, a: float32;
 }
+Image_Info :: struct {
+    image_type: VkImageType;
+    width, height: u32;
+    format : VkFormat;
+    tiling: VkImageTiling;
+    usage_flags: VkImageUsageFlags;
+    memory_flags: VkMemoryPropertyFlags;
+    view_aspect_flags: VkImageAspectFlags;
+    create_view: bool;
+}
 
 Image :: struct {
     handle: VkImage;
@@ -46,6 +67,7 @@ Vulkan_Context :: struct {
     queue_indices : [QUEUE_COUNT]int;
     queues : [QUEUE_COUNT]VkQueue;
     swapchain: Swapchain;
+    curr_frame : u32;
     #if DEBUG {
         vkDestroyDebugReportCallbackEXT : PFN_vkDestroyDebugReportCallbackEXT ;
         debug_callback : PFN_vkDebugReportCallbackEXT; 

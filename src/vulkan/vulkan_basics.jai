@@ -9,11 +9,7 @@
 #load "vulkan_types.jai";
 #load "vulkan_device.jai";
 #load "vulkan_swapchain.jai";
-DEBUG :: true;  
-WINDOW_WIDTH :: 640;
-WINDOW_HEIGHT :: 480;
-
-QUEUE_COUNT :: #run enum_highest_value(Queue_Family) + 1;
+#load "vulkan_image.jai";
 
 vulkan_init :: (using vulkan_context: *Vulkan_Context) -> bool {
     result : VkResult = .ERROR_INITIALIZATION_FAILED;

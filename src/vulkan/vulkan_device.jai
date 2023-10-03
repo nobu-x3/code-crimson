@@ -173,11 +173,6 @@ device_query_swapchain_details :: (vulkan_context : *Vulkan_Context, dev: VkPhys
     return desc, true;
 }
 
-Queue_Family :: enum u8 {
-    GRAPHICS :: 0;
-    PRESENT :: 1;
-}
-
 find_queue_families :: (vulkan_context: *Vulkan_Context) {
     queue_count : u32;
     vkGetPhysicalDeviceQueueFamilyProperties(vulkan_context.physical_device, *queue_count, null);
@@ -199,4 +194,27 @@ find_queue_families :: (vulkan_context: *Vulkan_Context) {
             vulkan_context.queue_indices[Queue_Family.PRESENT] = it_index;
         }
     }
+}
+
+device_find_mem_index :: (vulkan_context: *Vulkan_Context, types_filter: u32, mem_flags: VkMemoryPropertyFlags) -> int {
+    mem_props : VkPhysicalDeviceMemoryProperties;
+    vkGetPhysicalDeviceMemoryProperties(vulkan_context.physical_device, *mem_props);
+    for 0..mem_props.memoryTypeCount {
+        if types_filter & (1 << it) && mem_props.memoryTypes[it].propertyFlags == mem_flags {
+            return it;
+        }
+    }
+    return -1;
+}
+
+device_find_mem_type :: (vulkan_context: *Vulkan_Context, types_filter: u32, props: VkMemoryPropertyFlags) -> u32, bool #must {
+    mem_props: VkPhysicalDeviceMemoryProperties;
+    vkGetPhysicalDeviceMemoryProperties(vulkan_context.physical_device, *mem_props);
+    for 0..mem_props.memoryTypeCount - 1 {
+        if types_filter & (1 << it) && (mem_props.memoryTypes[it].propertyFlags & props) {
+            return it, true;
+        }
+    }
+    log(.FATAL, "Failed to find suitable memory type.");
+    return 0, false;
 }

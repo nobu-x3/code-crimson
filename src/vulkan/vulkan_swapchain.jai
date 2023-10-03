@@ -19,6 +19,74 @@ swapchain_create :: (using vulkan_context: *Vulkan_Context, query_swapchain_supp
                             then MAX_FRAMES_IN_FLIGHT
                             else swapchain.image_count;
     swapchain.max_frames_in_flight = swapchain.image_count - 1;
+    swapchain_ci := VkSwapchainCreateInfoKHR.{
+                                                surface = surface, minImageCount = swapchain.image_count, 
+                                                imageFormat = swapchain.format.format, 
+                                                imageColorSpace = swapchain.format.colorSpace, 
+                                                imageExtent = swapchain.extent, imageArrayLayers = 1, 
+                                                imageUsage = .COLOR_ATTACHMENT_BIT, 
+                                                preTransform = swapchain.support.capabilities.currentTransform, 
+                                                compositeAlpha = .OPAQUE_BIT_KHR, presentMode = swapchain.present_mode,
+                                                clipped = 1
+                                            };
+    q_fam_indices := u32.[cast(u32)queue_indices[Queue_Family.GRAPHICS], cast(u32)queue_indices[Queue_Family.PRESENT]];
+    if queue_indices[Queue_Family.GRAPHICS] != queue_indices[Queue_Family.PRESENT] {
+        swapchain_ci.imageSharingMode = .CONCURRENT;
+        swapchain_ci.queueFamilyIndexCount = 2;
+        swapchain_ci.pQueueFamilyIndices = q_fam_indices.data;
+    } else {
+        swapchain_ci.imageSharingMode = .EXCLUSIVE;
+        swapchain_ci.queueFamilyIndexCount = 0;
+        swapchain_ci.pQueueFamilyIndices = null;
+    }
+    res := vkCreateSwapchainKHR(device, *swapchain_ci, null, *swapchain.handle);
+    if res != .SUCCESS {
+        log(.FATAL, "Failed to create swapchain. %", res);
+        return false;
+    }
+    log(.INFO, "Vulkan swapchain successfully created.");
+    curr_frame = 0;
+    swapchain.image_count = 0;
+    vkGetSwapchainImagesKHR(device, swapchain.handle, *swapchain.image_count, null);
+    array_reserve(*swapchain.images, swapchain.image_count);
+    vkGetSwapchainImagesKHR(device, swapchain.handle, *swapchain.image_count, swapchain.images.data);
+    swapchain.images.count = swapchain.image_count;
+    log(.INFO, "Swapchain images received: %", swapchain.image_count);
+    array_reserve(*swapchain.views, swapchain.image_count);
+    for 0..swapchain.image_count - 1 {
+        view_ci := VkImageViewCreateInfo.{
+                                            viewType = ._2D, image = swapchain.images[it],
+                                            format = swapchain.format.format, 
+                                            subresourceRange = VkImageSubresourceRange.{
+                                                baseMipLevel = 0, levelCount = 1, 
+                                                baseArrayLayer = 0, layerCount = 1,
+                                                aspectMask = .COLOR_BIT
+                                            }
+                                        };
+        res = vkCreateImageView(device, *view_ci, null, *swapchain.views.data[it]);
+        swapchain.views.count += 1;
+        if res != .SUCCESS {
+            log(.FATAL, "Failed to create image view number %. %", it, res);
+            return false;
+        }
+    }
+    log(.INFO, "Swapchain image views created.");
+    swapchain.support.depth_format = choose_depth_format(vulkan_context);
+    swapchain.depth_format = swapchain.support.depth_format;
+    image_info := Image_Info.
+                            {
+                                width = swapchain.extent.width, height = swapchain.extent.height, 
+                                format = swapchain.depth_format, tiling = .OPTIMAL,
+                                usage_flags = .DEPTH_STENCIL_ATTACHMENT_BIT,
+                                memory_flags = .DEVICE_LOCAL_BIT, create_view = true,
+                                view_aspect_flags = .DEPTH_BIT
+                            };
+    depth_res : bool;
+    swapchain.depth_attachment, depth_res = image_create(vulkan_context, *image_info);
+    log(.INFO, "Depth attachment created.");
+    if !depth_res {
+        return false;
+    }
     return true;
 }
 
@@ -63,6 +131,3 @@ choose_swap_extent :: (vulkan_context: *Vulkan_Context, desc: Swapchain_Descript
                                             desc.capabilities.maxImageExtent.height)};
     return extent;
 }
-
-MAX_FRAMES_IN_FLIGHT :: 2;
-
