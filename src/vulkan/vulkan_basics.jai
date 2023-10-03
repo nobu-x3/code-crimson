@@ -101,7 +101,7 @@ vulkan_surface_create :: (vulkan_context: *Vulkan_Context) -> bool {
         surface_ci.hwnd      = my_hwnd;
         result := vkCreateWin32SurfaceKHR(vulkan_context.instance, *surface_ci, null, *vulkan_context.surface);
         if result != .SUCCESS {
-            log(.FATAL, "Failed to create xlib surface. Error: %", surface_result);
+            log(.FATAL, "Failed to create xlib surface. Error: %", result);
             return false;
         }
     }

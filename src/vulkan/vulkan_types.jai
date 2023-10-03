@@ -39,7 +39,7 @@ Image :: struct {
 
 Vulkan_Context :: struct {
     instance : VkInstance;
-    window : Window;
+    window : Window_Type;
     surface : VkSurfaceKHR;
     physical_device: VkPhysicalDevice;
     device : VkDevice;
