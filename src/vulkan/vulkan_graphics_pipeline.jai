@@ -22,7 +22,7 @@ graphics_pipeline_create :: (device: VkDevice, render_pass: Render_Pass, viewpor
             return pipeline, false;
         }
         fs_code : string;
-        fs_code, res = read_entire_file(vs_name);
+        fs_code, res = read_entire_file(fs_name);
         fs_slice : []u8;
         fs_slice.data = fs_code.data;
         fs_slice.count = fs_code.count;
