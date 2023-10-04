@@ -1,4 +1,4 @@
-MAX_FRAMES_IN_FLIGHT :: 2;
+MAX_FRAMES_IN_FLIGHT :: 3;
 WINDOW_WIDTH :: 640;
 WINDOW_HEIGHT :: 480;
 QUEUE_COUNT :: #run enum_highest_value(Queue_Family) + 1;

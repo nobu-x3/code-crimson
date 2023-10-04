@@ -6,7 +6,7 @@ render_pass_create :: (vulkan_context: *Vulkan_Context, device: VkDevice, color:
                                                 stencilLoadOp = .DONT_CARE, stencilStoreOp = .DONT_CARE, initialLayout = .UNDEFINED, 
                                                 finalLayout = .PRESENT_SRC_KHR};
     color_attach_ref := VkAttachmentReference.{attachment = 0, layout = .COLOR_ATTACHMENT_OPTIMAL};
-    depth_attach_desc := VkAttachmentDescription.{format = vulkan_context.swapchain.format.format, samples = ._1_BIT, loadOp = .CLEAR, storeOp = .DONT_CARE,
+    depth_attach_desc := VkAttachmentDescription.{format = vulkan_context.swapchain.depth_format, samples = ._1_BIT, loadOp = .CLEAR, storeOp = .DONT_CARE,
                                                 stencilLoadOp = .DONT_CARE, stencilStoreOp = .DONT_CARE, initialLayout = .UNDEFINED, 
                                                 finalLayout = .DEPTH_STENCIL_ATTACHMENT_OPTIMAL};
     depth_attach_ref := VkAttachmentReference.{attachment = 1, layout = .DEPTH_STENCIL_ATTACHMENT_OPTIMAL};
