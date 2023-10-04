@@ -12,6 +12,7 @@
 #load "vulkan_image.jai";
 #load "vulkan_commands.jai";
 #load "vulkan_render_pass.jai";
+#load "vulkan_framebuffer.jai";
 
 vulkan_init :: (using vulkan_context: *Vulkan_Context) -> bool {
     result : VkResult = .ERROR_INITIALIZATION_FAILED;
