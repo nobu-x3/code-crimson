@@ -49,8 +49,8 @@ print_available_vulkan_extensions :: () {
     extension_array := NewArray(extension_count, VkExtensionProperties);
     defer free(extension_array.data);
     vkEnumerateInstanceExtensionProperties(null, *extension_count, extension_array.data);
-    log(.INFO, "Available extensions:\n");
-    for extension_array log(.INFO, "    % (%)\n", to_string(it.extensionName.data), it.specVersion);
+    log(.INFO, "Available extensions:");
+    for extension_array log(.INFO, "    % (%)", to_string(it.extensionName.data), it.specVersion);
 }
 
 get_suitable_physical_device :: (vulkan_context: *Vulkan_Context) -> bool {

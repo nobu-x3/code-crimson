@@ -1,12 +1,6 @@
 #import "File";
 #import "String";
 
-offset_of :: (type: $T, name: string) -> int  {
-    ti := cast(*Type_Info_Struct)type_info(T);
-    member := get_field(ti, name);
-    return member.offset_in_bytes;
-}
-
 // @TODO: make this extendable with a config struct
 graphics_pipeline_create :: (device: VkDevice, render_pass: Render_Pass, viewport: VkViewport, scissor: VkRect2D, vs_name: string, fs_name: string) -> Pipeline, bool #must {
     string_context := context;
@@ -58,13 +52,13 @@ graphics_pipeline_create :: (device: VkDevice, render_pass: Render_Pass, viewpor
             binding = 0,
             location = 0,
             format = .R32G32_SFLOAT,
-            offset = cast(u32)offset_of(Vertex, "pos")
+            offset = 0
         },
         .{
             binding = 0,
             location = 1,
             format = .R32G32B32_SFLOAT,
-            offset = cast(u32)offset_of(Vertex, "color")
+            offset = size_of([2]float32)
         }
     ];
     vertex_input_ci := VkPipelineVertexInputStateCreateInfo.{
@@ -124,18 +118,21 @@ graphics_pipeline_create :: (device: VkDevice, render_pass: Render_Pass, viewpor
         log(.FATAL, "Failed to create pipeline layout. %", res);
         return pipeline, false;
     }
+    log(.INFO, "Pipeline LAYOUT created successfully.");
     pipeline_ci := VkGraphicsPipelineCreateInfo.{
-        stageCount = 2, pStages = shader_stages.data,
+        stageCount = 2, pStages = shader_stages.data, pVertexInputState = *vertex_input_ci,
         pInputAssemblyState = *input_assembly_ci, pViewportState = *viewport_state_ci,
         pRasterizationState = *rasterizer_ci, pMultisampleState = *multisampling_ci,
         pDepthStencilState = *depth_stencil_ci, pColorBlendState = *color_blending_ci,
         pDynamicState = *dynamic_state_ci, layout = pipeline.layout,
-        renderPass = render_pass.handle, subpass = 0
+        renderPass = render_pass.handle, subpass = 0, basePipelineHandle = null, 
+        basePipelineIndex = -1
     };
-    res = vkCreateGraphicsPipelines(device, null, 1, *pipeline_ci, null, *pipeline.handle);
+    res = vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, *pipeline_ci, null, *pipeline.handle);
     if res != .SUCCESS {
         log(.FATAL, "Failed to create graphics pipeline. %", res);
         return pipeline, false;
     }
+    log(.INFO, "Pipeline created successfully.");
     return pipeline, true;
 }

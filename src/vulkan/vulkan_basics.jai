@@ -16,6 +16,10 @@
 #load "vulkan_graphics_pipeline.jai";
 #load "vulkan_shader_module.jai";
 
+DEBUG :: true;  
+
+vkDestroyDebugReportCallbackEXT : PFN_vkDestroyDebugReportCallbackEXT;
+
 vulkan_init :: (using vulkan_context: *Vulkan_Context) -> bool {
     result : VkResult = .ERROR_INITIALIZATION_FAILED;
     // Application Info
@@ -47,10 +51,11 @@ vulkan_init :: (using vulkan_context: *Vulkan_Context) -> bool {
             extensions[1] = VK_KHR_WIN32_SURFACE_EXTENSION_NAME.data;
             extensions[2] = VK_EXT_DEBUG_REPORT_EXTENSION_NAME.data;
         } else {
-            extensions: [3] *u8;
+            extensions: [4] *u8;
             extensions[0] = VK_KHR_SURFACE_EXTENSION_NAME.data;
             extensions[1] = VK_KHR_XLIB_SURFACE_EXTENSION_NAME.data;
             extensions[2] = VK_EXT_DEBUG_REPORT_EXTENSION_NAME.data;
+            extensions[3] = VK_EXT_DEBUG_UTILS_EXTENSION_NAME.data;
         }
     }
     create_info.enabledExtensionCount   = extensions.count;
@@ -58,7 +63,7 @@ vulkan_init :: (using vulkan_context: *Vulkan_Context) -> bool {
     #if DEBUG {
         debug_create_info := create_info;
         debug_create_info.enabledLayerCount = 1;
-        debug_create_info.ppEnabledLayerNames = (*u8).["VK_LAYER_LUNARG_standard_validation"].data;
+        debug_create_info.ppEnabledLayerNames = (*u8).["VK_LAYER_KHRONOS_validation"].data;
         result = vkCreateInstance(*debug_create_info, null, *instance);
         if result == .SUCCESS {
             vkCreateDebugReportCallbackEXT  : PFN_vkCreateDebugReportCallbackEXT = xx vkGetInstanceProcAddr(instance, "vkCreateDebugReportCallbackEXT");
@@ -79,7 +84,12 @@ vulkan_init :: (using vulkan_context: *Vulkan_Context) -> bool {
     return result == .SUCCESS;
 }
 
-vulkan_deinit :: (instance: VkInstance) {
+vulkan_deinit :: (instance: VkInstance, vulkan_context: Vulkan_Context) {
+    #if DEBUG {
+        if vkDestroyDebugReportCallbackEXT && vulkan_context.debug_callback_handle {
+            vkDestroyDebugReportCallbackEXT(instance, vulkan_context.debug_callback_handle, null);
+        }
+    }
     vkDestroyInstance(instance, null);
 }
 
@@ -132,3 +142,11 @@ create_sync_objects :: (using vulkan_context: *Vulkan_Context) -> bool #must{
     return true;
 }
 
+debug_callback :: (flags: VkDebugReportFlagsEXT, objType: VkDebugReportObjectTypeEXT, obj: u64, location: u64, code: s32, layerPrefix: *u8, msg: *u8, userData: *void) -> VkBool32 #c_call {
+    new_context: Context;
+    push_context new_context {
+        log(.ERROR, "%\n", to_string(msg));
+    }
+    
+    return VK_FALSE;
+}

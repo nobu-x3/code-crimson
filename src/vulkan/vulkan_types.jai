@@ -1,5 +1,4 @@
 MAX_FRAMES_IN_FLIGHT :: 2;
-DEBUG :: true;  
 WINDOW_WIDTH :: 640;
 WINDOW_HEIGHT :: 480;
 QUEUE_COUNT :: #run enum_highest_value(Queue_Family) + 1;
@@ -100,10 +99,9 @@ Vulkan_Context :: struct {
     image_available: [MAX_FRAMES_IN_FLIGHT]VkSemaphore;
     render_finished: [MAX_FRAMES_IN_FLIGHT]VkSemaphore;
     in_flight: [MAX_FRAMES_IN_FLIGHT]VkFence;
+    pipeline: Pipeline;
     curr_frame : u32;
     #if DEBUG {
-        vkDestroyDebugReportCallbackEXT : PFN_vkDestroyDebugReportCallbackEXT ;
-        debug_callback : PFN_vkDebugReportCallbackEXT; 
         debug_callback_handle : VkDebugReportCallbackEXT;
     }
 }
