@@ -4,6 +4,11 @@ WINDOW_WIDTH :: 640;
 WINDOW_HEIGHT :: 480;
 QUEUE_COUNT :: #run enum_highest_value(Queue_Family) + 1;
 
+Vertex :: struct {
+    pos: [2]float32;
+    color: [3]float32;
+}
+
 Color :: struct {
     r, g, b, a: float32;
 }
@@ -49,6 +54,11 @@ Swapchain :: struct {
     support: Swapchain_Description;
     framebuffers: [..]Framebuffer;
     max_frames_in_flight: u32;
+}
+
+Pipeline :: struct {
+    handle : VkPipeline;
+    layout : VkPipelineLayout;
 }
 
 Framebuffer :: struct {

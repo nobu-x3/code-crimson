@@ -2,7 +2,8 @@
     "local_modules": [
         "modules",
         "/home/nobu/jai/modules",
-        "C:/Users/CherryMonster/jai/modules"
+        "C:/Users/CherryMonster/jai/modules",
+        "C:/Users/nobu/jai/modules"
     ],
     "roots": [
         "build.jai",
