@@ -97,6 +97,9 @@ Vulkan_Context :: struct {
     command_pool: VkCommandPool;
     command_buffers: [MAX_FRAMES_IN_FLIGHT]VkCommandBuffer;
     main_render_pass : Render_Pass;
+    image_available: [MAX_FRAMES_IN_FLIGHT]VkSemaphore;
+    render_finished: [MAX_FRAMES_IN_FLIGHT]VkSemaphore;
+    in_flight: [MAX_FRAMES_IN_FLIGHT]VkFence;
     curr_frame : u32;
     #if DEBUG {
         vkDestroyDebugReportCallbackEXT : PFN_vkDestroyDebugReportCallbackEXT ;

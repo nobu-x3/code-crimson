@@ -108,3 +108,27 @@ vulkan_surface_create :: (vulkan_context: *Vulkan_Context) -> bool {
     }
     return true;
 }
+
+create_sync_objects :: (using vulkan_context: *Vulkan_Context) -> bool #must{
+    semaphore_ci : VkSemaphoreCreateInfo;
+    fence_ci := VkFenceCreateInfo.{flags = .SIGNALED_BIT};
+    for 0..MAX_FRAMES_IN_FLIGHT - 1 {
+        res := vkCreateSemaphore(device, *semaphore_ci, null, *image_available.data[it]);
+        if res != .SUCCESS {
+            log(.FATAL, "Failed to create image available semaphore. %", res);
+            return false;
+        }
+        res = vkCreateSemaphore(device, *semaphore_ci, null, *render_finished.data[it]);
+        if res != .SUCCESS {
+            log(.FATAL, "Failed to create render finished semaphore. %", res);
+            return false;
+        }
+        res = vkCreateFence(device, *fence_ci, null, *in_flight.data[it]);
+        if res != .SUCCESS {
+            log(.FATAL, "Failed to create in flight fence. %", res);
+            return false;
+        }
+    }
+    return true;
+}
+
