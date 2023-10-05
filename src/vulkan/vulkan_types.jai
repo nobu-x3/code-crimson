@@ -110,6 +110,7 @@ Vulkan_Context :: struct {
     index_buffer: Buffer;
     pipeline: Pipeline;
     curr_frame : u32;
+    image_index : u32;
     #if DEBUG {
         debug_callback_handle : VkDebugReportCallbackEXT;
     }
