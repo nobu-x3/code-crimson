@@ -55,6 +55,21 @@ main :: () {
             vkDestroyFence(vulkan_context.device, vulkan_context.in_flight[it], null);
         }
     }
+    vertices := Vertex.[
+		.{pos = .[-0.5, -0.5], color = .[0.0, 0.0, 1.0]},
+		.{pos = .[0.5, -0.5], color = .[1.0, 0.0, 0.0]},
+		.{pos = .[0.5, 0.5], color = .[0.0, 1.0, 0.0]},
+		.{pos = .[-0.5, 0.5], color = .[1.0, 0.0, 0.0]},
+    ];
+    indices := u16.[0, 1, 2, 2, 3, 0];
+    vulkan_context.vertex_buffer, res = buffer_create_and_copy(vulkan_context.device, vulkan_context.physical_device, .VERTEX_BUFFER_BIT,
+                            vulkan_context.command_pool, vulkan_context.queues[Queue_Family.GRAPHICS], vertices);
+    if !res return;
+    defer buffer_destroy(vulkan_context.device, vulkan_context.vertex_buffer);
+    vulkan_context.index_buffer, res = buffer_create_and_copy(vulkan_context.device, vulkan_context.physical_device, .INDEX_BUFFER_BIT,
+                            vulkan_context.command_pool, vulkan_context.queues[Queue_Family.GRAPHICS], vertices);
+    if !res return;
+    defer buffer_destroy(vulkan_context.device, vulkan_context.index_buffer);
     exit := false;
     while !exit {
         update_window_events();

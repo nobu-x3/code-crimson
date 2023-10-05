@@ -16,6 +16,13 @@ Extent2D :: struct {
     x, y, w, h: float32;
 }
 
+Buffer :: struct {
+    handle: VkBuffer;
+    memory: VkDeviceMemory;
+    length: int;
+    size: VkDeviceSize;
+}
+
 Render_Pass_Begin_Info :: struct {
     single_use, render_pass_continue, simultaneous_use: bool;
 }
@@ -99,6 +106,8 @@ Vulkan_Context :: struct {
     image_available: [MAX_FRAMES_IN_FLIGHT]VkSemaphore;
     render_finished: [MAX_FRAMES_IN_FLIGHT]VkSemaphore;
     in_flight: [MAX_FRAMES_IN_FLIGHT]VkFence;
+    vertex_buffer: Buffer;
+    index_buffer: Buffer;
     pipeline: Pipeline;
     curr_frame : u32;
     #if DEBUG {

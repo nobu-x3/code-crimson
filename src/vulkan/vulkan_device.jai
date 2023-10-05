@@ -207,9 +207,9 @@ device_find_mem_index :: (vulkan_context: *Vulkan_Context, types_filter: u32, me
     return -1;
 }
 
-device_find_mem_type :: (vulkan_context: *Vulkan_Context, types_filter: u32, props: VkMemoryPropertyFlags) -> u32, bool #must {
+device_find_mem_type :: (physical_device: VkPhysicalDevice, types_filter: u32, props: VkMemoryPropertyFlags) -> u32, bool #must {
     mem_props: VkPhysicalDeviceMemoryProperties;
-    vkGetPhysicalDeviceMemoryProperties(vulkan_context.physical_device, *mem_props);
+    vkGetPhysicalDeviceMemoryProperties(physical_device, *mem_props);
     for 0..mem_props.memoryTypeCount - 1 {
         if types_filter & (1 << it) && (mem_props.memoryTypes[it].propertyFlags & props) {
             return it, true;
