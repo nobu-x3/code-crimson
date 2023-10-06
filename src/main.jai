@@ -68,7 +68,7 @@ main :: () {
     if !res return;
     defer buffer_destroy(vulkan_context.device, vulkan_context.vertex_buffer);
     vulkan_context.index_buffer, res = buffer_create_and_copy(vulkan_context.device, vulkan_context.physical_device, .INDEX_BUFFER_BIT,
-                            vulkan_context.command_pool, vulkan_context.queues[Queue_Family.GRAPHICS], vertices);
+                            vulkan_context.command_pool, vulkan_context.queues[Queue_Family.GRAPHICS], indices);
     if !res return;
     defer buffer_destroy(vulkan_context.device, vulkan_context.index_buffer);
     exit := false;
