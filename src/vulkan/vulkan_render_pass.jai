@@ -1,12 +1,12 @@
 
 // @TODO: all the stuff we're passing here should eventually go to a config struct.
-render_pass_create :: (vulkan_context: *Vulkan_Context, device: VkDevice, color: Color, extent: Extent2D, depth: float32, stencil: u32) -> Render_Pass, bool #must {
+render_pass_create :: (swapchain: Swapchain, device: VkDevice, color: Color, extent: Extent2D, depth: float32, stencil: u32) -> Render_Pass, bool #must {
     render_pass := Render_Pass.{color = color, extent = extent, depth = depth, stencil = stencil};
-    color_attach_desc := VkAttachmentDescription.{format = vulkan_context.swapchain.format.format, samples = ._1_BIT, loadOp = .CLEAR, storeOp = .STORE,
+    color_attach_desc := VkAttachmentDescription.{format = swapchain.format.format, samples = ._1_BIT, loadOp = .CLEAR, storeOp = .STORE,
                                                 stencilLoadOp = .DONT_CARE, stencilStoreOp = .DONT_CARE, initialLayout = .UNDEFINED, 
                                                 finalLayout = .PRESENT_SRC_KHR};
     color_attach_ref := VkAttachmentReference.{attachment = 0, layout = .COLOR_ATTACHMENT_OPTIMAL};
-    depth_attach_desc := VkAttachmentDescription.{format = vulkan_context.swapchain.depth_format, samples = ._1_BIT, loadOp = .CLEAR, storeOp = .DONT_CARE,
+    depth_attach_desc := VkAttachmentDescription.{format = swapchain.depth_format, samples = ._1_BIT, loadOp = .CLEAR, storeOp = .DONT_CARE,
                                                 stencilLoadOp = .DONT_CARE, stencilStoreOp = .DONT_CARE, initialLayout = .UNDEFINED, 
                                                 finalLayout = .DEPTH_STENCIL_ATTACHMENT_OPTIMAL};
     depth_attach_ref := VkAttachmentReference.{attachment = 1, layout = .DEPTH_STENCIL_ATTACHMENT_OPTIMAL};
