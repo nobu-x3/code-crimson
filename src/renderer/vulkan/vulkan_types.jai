@@ -3,6 +3,7 @@ WINDOW_WIDTH :: 640;
 WINDOW_HEIGHT :: 480;
 QUEUE_COUNT :: #run enum_highest_value(Queue_Family) + 1;
 
+
 Vertex :: struct {
     pos: [2]float32;
     color: [3]float32;
@@ -111,6 +112,7 @@ Vulkan_Context :: struct {
     pipeline: Pipeline;
     curr_frame : u32;
     image_index : u32;
+    camera: Camera;
     #if DEBUG {
         debug_callback_handle : VkDebugReportCallbackEXT;
     }

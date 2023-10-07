@@ -102,9 +102,12 @@ graphics_pipeline_create :: (device: VkDevice, render_pass: Render_Pass, viewpor
         scissorCount = scissors.count, pScissors = scissors.data
     };
     // @TODO: implement descriptor sets and push constants here
+    push_constant_range := VkPushConstantRange.{
+        size = size_of(Mesh_Push_Constants), offset = 0, stageFlags = .VERTEX_BIT
+    };
     pipeline_layout_ci := VkPipelineLayoutCreateInfo.{
-        setLayoutCount = 0, pSetLayouts = null, pushConstantRangeCount = 0,
-        pPushConstantRanges = null
+        setLayoutCount = 0, pSetLayouts = null, pushConstantRangeCount = 1,
+        pPushConstantRanges = *push_constant_range
     };
     vs_ci := VkPipelineShaderStageCreateInfo.{
         stage = .VERTEX_BIT, module = vs_module, pName = "main"

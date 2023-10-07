@@ -4,10 +4,20 @@
 #import "VulkanSF";
 #import "Window_Creation";
 #import "Input";
+#import "Math";
 #load "core/logger.jai";
-#load "vulkan/vulkan_basics.jai";
+#load "renderer/vulkan/vulkan_basics.jai";
+#load "renderer/renderer_types.jai";
+#load "renderer/camera.jai";
 
-x, y, width, height: s32;
+
+radians :: inline (degrees : float) -> float {
+    return degrees * PI/180;
+}
+
+degrees :: inline (radians: float) -> float {
+    return radians * 180/PI;
+}
 
 main :: () {
     logger_init(0);
@@ -74,6 +84,7 @@ main :: () {
                             vulkan_context.command_pool, vulkan_context.queues[Queue_Family.GRAPHICS], indices);
     if !res return;
     defer buffer_destroy(vulkan_context.device, vulkan_context.index_buffer);
+    vulkan_context.camera = camera_create(radians(70.0), cast(float)WINDOW_WIDTH/WINDOW_HEIGHT, 0.1, 1000);
     exit := false;
     while !exit {
         update_window_events();
@@ -90,6 +101,7 @@ main :: () {
         draw_frame(vulkan_context);
         end_frame(*vulkan_context);
         reset_temporary_storage();
+        frame_nr += 1;
     }
     log(.INFO, "Exited.");
 }
@@ -140,11 +152,21 @@ end_frame :: (using vulkan_context: *Vulkan_Context) {
     swapchain_present(vulkan_context, queues[Queue_Family.GRAPHICS], *render_finished[curr_frame], *image_index);
 }
 
+frame_nr := 0;
+
 draw_frame :: (using vulkan_context : Vulkan_Context) {
+    cam_pos := Vector3.{0, 0, -10};
+    view := make_translation_matrix4(cam_pos);
+    view_proj := camera.projection * view;
+    rot_q : Quaternion = ---; 
+    set_from_axis_and_angle(*rot_q, .{0, 1, 0}, radians(frame_nr * 0.04));
+    model := rotation_matrix(Matrix4, rot_q);
+    push_constants := Mesh_Push_Constants.{render_matrix = view_proj * model};
     vkCmdBindPipeline(command_buffers[curr_frame], .GRAPHICS, pipeline.handle);
     vertex_buffers := VkBuffer.[vertex_buffer.handle];
     offsets := VkDeviceSize.[0];
     vkCmdBindVertexBuffers(command_buffers[curr_frame], 0, 1, vertex_buffers.data, offsets.data);
     vkCmdBindIndexBuffer(command_buffers[curr_frame], index_buffer.handle, 0, .UINT16);
+    vkCmdPushConstants(command_buffers[curr_frame], pipeline.layout, .VERTEX_BIT, 0, size_of(Mesh_Push_Constants), *push_constants);
     vkCmdDrawIndexed(command_buffers[curr_frame], cast(u32)index_buffer.length, 1, 0, 0, 0);
 }
