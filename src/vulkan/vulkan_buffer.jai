@@ -64,7 +64,6 @@ buffer_create_and_copy :: (logical_device: VkDevice, physical_device: VkPhysical
     out_buffer := Buffer.{
         length = data.count, size = cast(VkDeviceSize)(data.count * size_of(T))
     };
-    print("% % %\n", T, size_of(T), out_buffer.size);
     staging, res := buffer_create(logical_device, physical_device, size_of(T), data.count, .TRANSFER_SRC_BIT, .HOST_VISIBLE_BIT | .HOST_COHERENT_BIT);
     if !res {
         log(.FATAL, "Failed to create vertex buffer because staging buffer creation failed.");

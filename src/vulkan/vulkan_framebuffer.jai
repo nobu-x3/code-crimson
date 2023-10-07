@@ -19,8 +19,7 @@ framebuffer_destroy :: (device: VkDevice, framebuffer: *Framebuffer) {
     array_free(framebuffer.attachments);
 }
 
-recreate_framebuffers :: (device: VkDevice, swapchain: Swapchain, render_pass: Render_Pass) {
-
+recreate_framebuffers :: (device: VkDevice, swapchain: *Swapchain, render_pass: Render_Pass) {
     for 0..swapchain.image_count-1 {
         if swapchain.framebuffers.count > 0 framebuffer_destroy(device, *swapchain.framebuffers[it]);
     }

@@ -7,6 +7,8 @@
 #load "core/logger.jai";
 #load "vulkan/vulkan_basics.jai";
 
+x, y, width, height: s32;
+
 main :: () {
     logger_init(0);
     defer logger_deinit();
@@ -17,15 +19,15 @@ main :: () {
         return;
     }
     defer vulkan_deinit(vulkan_context.instance, vulkan_context);
-    vulkan_context.window = create_window(WINDOW_WIDTH, WINDOW_HEIGHT, "Code Crimson");
-    res := vulkan_surface_create(*vulkan_context);
+    vulkan_context.window = create_window(WINDOW_WIDTH, WINDOW_HEIGHT, "Code Crimson", 1, 1);
+    res := vulkan_surface_create(vulkan_context.window, vulkan_context.instance, *vulkan_context.surface);
     if !res return;
     log(.INFO, "Vulkan surface successfully created.");
     res = vulkan_device_create(*vulkan_context);
     if !res return;
     defer vkDestroyDevice(vulkan_context.device, null);
     log(.INFO, "Vulkan device successfully created.");
-    res = swapchain_create(*vulkan_context);
+    res = swapchain_create(*vulkan_context, *vulkan_context.swapchain);
     if !res return;
     defer swapchain_cleanup(*vulkan_context);
     vulkan_context.command_pool, res = command_pool_create(vulkan_context.device, cast(u32)vulkan_context.queue_indices[Queue_Family.GRAPHICS]);
@@ -46,7 +48,7 @@ main :: () {
     if !res return;
     defer vkDestroyPipelineLayout(vulkan_context.device, vulkan_context.pipeline.layout, null);
     defer vkDestroyPipeline(vulkan_context.device, vulkan_context.pipeline.handle, null);
-    recreate_framebuffers(vulkan_context.device, vulkan_context.swapchain, vulkan_context.main_render_pass);
+    recreate_framebuffers(vulkan_context.device, *vulkan_context.swapchain, vulkan_context.main_render_pass);
     res = create_sync_objects(*vulkan_context);
     if !res return;
     defer {
@@ -92,11 +94,13 @@ main :: () {
 }
 
 begin_frame :: (using vulkan_context: *Vulkan_Context, delta_time: float64) {
+    log(.INFO, "Begin frame");
     u64_low, u64_high := get_integer_range(u64);
     res : bool;
+    ind : u32;
     vkWaitForFences(device, 1, *in_flight[curr_frame], 1, u64_high);
-    image_index, res = swapchain_acquire_next_image_index(vulkan_context, image_available[curr_frame], null, u64_high);
-    if !res return;
+    ind, res = swapchain_acquire_next_image_index(vulkan_context, image_available[curr_frame], null, u64_high);
+    // if !res return;
     reset_res := vkResetFences(device, 1, *in_flight[curr_frame]);
     if reset_res != .SUCCESS {
         log(.FATAL, "Failed to reset fence. %", reset_res);
@@ -137,6 +141,7 @@ end_frame :: (using vulkan_context: *Vulkan_Context) {
 }
 
 draw_frame :: (using vulkan_context : Vulkan_Context) {
+    log(.INFO, "Draw frame");
     vkCmdBindPipeline(command_buffers[curr_frame], .GRAPHICS, pipeline.handle);
     vertex_buffers := VkBuffer.[vertex_buffer.handle];
     offsets := VkDeviceSize.[0];

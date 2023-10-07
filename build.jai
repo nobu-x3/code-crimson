@@ -15,7 +15,9 @@ build :: (){
         options.output_path = "./bin/";
         options.output_executable_name = "code-crimson";
         set_build_options(options, w);
+        compiler_begin_intercept(w);
         add_build_file("./src/main.jai", w);
+        compiler_end_intercept(w);
     }
     set_build_options_dc(.{do_output=false});
 }
