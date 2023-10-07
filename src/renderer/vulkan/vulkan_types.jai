@@ -48,6 +48,8 @@ Queue_Family :: enum u8 {
     PRESENT :: 1;
 }
 
+// Pipeline builder's resizable arrays are allocated using temp allocator,
+// so use them fast.
 Pipeline_Builder :: struct {
     device: VkDevice;
     render_pass_handle: VkRenderPass;
@@ -70,6 +72,7 @@ Pipeline_Builder :: struct {
     shader_stages: [..]VkPipelineShaderStageCreateInfo;
     pipeline_ci: VkGraphicsPipelineCreateInfo;
     shader_modules: [..]VkShaderModule;
+    descriptor_set_layouts: [..]VkDescriptorSetLayout;
 }
 
 Swapchain :: struct {

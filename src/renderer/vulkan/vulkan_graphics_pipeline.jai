@@ -254,12 +254,26 @@ pipeline_builder_default:: (using builder: *Pipeline_Builder, logical_device: Vk
         viewportCount = cast(u32)viewports.count, pViewports = viewports.data,
         scissorCount = cast(u32)scissors.count, pScissors = scissors.data
     };
-    // @TODO: implement descriptor sets and push constants here
     push_constant_range = VkPushConstantRange.{
         size = size_of(Mesh_Push_Constants), offset = 0, stageFlags = .VERTEX_BIT
     };
+    descriptor_set_layouts.allocator = temp;
+    cam_buffer_binding := VkDescriptorSetLayoutBinding.{
+        binding = 0, descriptorCount = 1,
+        descriptorType = .UNIFORM_BUFFER,
+        stageFlags = .VERTEX_BIT
+    };
+    set_ci := VkDescriptorSetLayoutCreateInfo.{
+        bindingCount = 1, pBindings = *cam_buffer_binding
+    };
+    global_layout : VkDescriptorSetLayout;
+    // @TODO: this leaks memory and is unsafe. Will need to either return this 
+    // too or save to the pipeline.
+    vkCreateDescriptorSetLayout(device, *set_ci, null, *global_layout);
+    array_add(*descriptor_set_layouts, global_layout);
     pipeline_layout_ci = VkPipelineLayoutCreateInfo.{
-        setLayoutCount = 0, pSetLayouts = null, pushConstantRangeCount = 1,
+        setLayoutCount = cast(u32)descriptor_set_layouts.count, 
+        pSetLayouts = descriptor_set_layouts.data, pushConstantRangeCount = 1,
         pPushConstantRanges = *push_constant_range
     };
     vs_ci := VkPipelineShaderStageCreateInfo.{
