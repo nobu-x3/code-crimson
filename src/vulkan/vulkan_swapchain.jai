@@ -1,14 +1,15 @@
 // Sometimes swapchain.support is already queried.
-swapchain_create :: (using vulkan_context: *Vulkan_Context, out_swapchain: *Swapchain, query_swapchain_support: bool = false, width: u32 = 0, height: u32 = 0) -> bool {
-    if query_swapchain_support {
-        out_swapchain.support = device_query_swapchain_details(vulkan_context, physical_device);
-    }
+swapchain_create :: (window : Window_Type, surface: VkSurfaceKHR, device: VkDevice, physical_device: VkPhysicalDevice, queue_indices: []int, swapchain_support: *Swapchain_Description = null, width: u32 = 0, height: u32 = 0) -> Swapchain, bool#must {
+    out_swapchain : Swapchain;
+    if !swapchain_support {
+        out_swapchain.support = device_query_swapchain_details(surface, physical_device);
+    } else out_swapchain.support = swapchain_support.*;
     out_swapchain.format = choose_surface_format(out_swapchain.support);
-    if out_swapchain.format.format == VkFormat.UNDEFINED return false;
-    out_swapchain.depth_format = choose_depth_format(vulkan_context);
+    if out_swapchain.format.format == VkFormat.UNDEFINED return out_swapchain, false;
+    out_swapchain.depth_format = choose_depth_format(physical_device);
     out_swapchain.present_mode = choose_present_mode(out_swapchain.support);
     if width == 0 || height == 0 {
-        out_swapchain.extent = choose_swap_extent(vulkan_context, out_swapchain.support);
+        out_swapchain.extent = choose_swap_extent(window, out_swapchain.support);
     }
     out_swapchain.image_count = out_swapchain.support.capabilities.minImageCount + 1;
     if out_swapchain.support.capabilities.maxImageCount > 0 &&
@@ -42,12 +43,11 @@ swapchain_create :: (using vulkan_context: *Vulkan_Context, out_swapchain: *Swap
     res := vkCreateSwapchainKHR(device, *swapchain_ci, null, *out_swapchain.handle);
     if res != .SUCCESS {
         log(.FATAL, "Failed to create swapchain. %", res);
-        return false;
+        return out_swapchain, false;
     }
     log(.INFO, "Vulkan swapchain successfully created.");
-    curr_frame = 0;
-    swapchain.image_count = 0;
-    vkGetSwapchainImagesKHR(device, swapchain.handle, *out_swapchain.image_count, null);
+    out_swapchain.image_count = 0;
+    vkGetSwapchainImagesKHR(device, out_swapchain.handle, *out_swapchain.image_count, null);
     array_reserve(*out_swapchain.images, out_swapchain.image_count);
     vkGetSwapchainImagesKHR(device, out_swapchain.handle, *out_swapchain.image_count, out_swapchain.images.data);
     out_swapchain.images.count = out_swapchain.image_count;
@@ -55,8 +55,8 @@ swapchain_create :: (using vulkan_context: *Vulkan_Context, out_swapchain: *Swap
     array_reserve(*out_swapchain.views, out_swapchain.image_count);
     for 0..out_swapchain.image_count - 1 {
         view_ci := VkImageViewCreateInfo.{
-                                            viewType = ._2D, image = swapchain.images[it],
-                                            format = swapchain.format.format, 
+                                            viewType = ._2D, image = out_swapchain.images[it],
+                                            format = out_swapchain.format.format, 
                                             subresourceRange = VkImageSubresourceRange.{
                                                 baseMipLevel = 0, levelCount = 1, 
                                                 baseArrayLayer = 0, layerCount = 1,
@@ -67,11 +67,11 @@ swapchain_create :: (using vulkan_context: *Vulkan_Context, out_swapchain: *Swap
         out_swapchain.views.count += 1;
         if res != .SUCCESS {
             log(.FATAL, "Failed to create image view number %. %", it, res);
-            return false;
+            return out_swapchain, false;
         }
     }
     log(.INFO, "Swapchain image views created.");
-    out_swapchain.support.depth_format = choose_depth_format(vulkan_context);
+    out_swapchain.support.depth_format = choose_depth_format(physical_device);
     out_swapchain.depth_format = out_swapchain.support.depth_format;
     image_info := Image_Info.
                             {
@@ -82,12 +82,12 @@ swapchain_create :: (using vulkan_context: *Vulkan_Context, out_swapchain: *Swap
                                 view_aspect_flags = .DEPTH_BIT
                             };
     depth_res : bool;
-    out_swapchain.depth_attachment, depth_res = image_create(vulkan_context, *image_info);
+    out_swapchain.depth_attachment, depth_res = image_create(device, physical_device, *image_info);
     log(.INFO, "Depth attachment created.");
     if !depth_res {
-        return false;
+        return out_swapchain, false;
     }
-    return true;
+    return out_swapchain, true;
 }
 
 swapchain_cleanup :: (using vulkan_context: *Vulkan_Context) {
@@ -112,7 +112,7 @@ swapchain_recreate :: (using vulkan_context: *Vulkan_Context) -> bool {
     }
     vkDeviceWaitIdle(device);
     swapchain_cleanup(vulkan_context);
-    swapchain_create(vulkan_context, *swapchain);
+    swapchain, success = swapchain_create(window, surface, device, physical_device, queue_indices);
     res := create_image_views_default(vulkan_context);
     if !res {
         return false;
@@ -155,7 +155,7 @@ choose_surface_format :: (using desc: Swapchain_Description) -> VkSurfaceFormatK
     return formats[0];
 }
 
-choose_depth_format :: (using vulkan_context: *Vulkan_Context) -> VkFormat {
+choose_depth_format :: (physical_device: VkPhysicalDevice) -> VkFormat {
     priorities := VkFormat.[.D32_SFLOAT, .D32_SFLOAT_S8_UINT, .D24_UNORM_S8_UINT];
     flags := VkFormatFeatureFlags.DEPTH_STENCIL_ATTACHMENT_BIT;
     for 0..2 {
@@ -176,11 +176,11 @@ choose_present_mode :: (using desc: Swapchain_Description) -> VkPresentModeKHR {
     return .FIFO_KHR;
 }
 
-choose_swap_extent :: (vulkan_context: *Vulkan_Context, desc: Swapchain_Description) -> VkExtent2D {
+choose_swap_extent :: (window: Window_Type, desc: Swapchain_Description) -> VkExtent2D {
     if desc.capabilities.currentExtent.width != 4_294_967_295 {
         return desc.capabilities.currentExtent;
     }
-    x, y, width, height, success := get_dimensions(vulkan_context.window, false);
+    x, y, width, height, success := get_dimensions(window, false);
     extent : VkExtent2D = .{ width = clamp(cast(u32)width, 
                                             desc.capabilities.minImageExtent.width, 
                                             desc.capabilities.maxImageExtent.width), 

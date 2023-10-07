@@ -19,15 +19,16 @@ main :: () {
         return;
     }
     defer vulkan_deinit(vulkan_context.instance, vulkan_context);
-    vulkan_context.window = create_window(WINDOW_WIDTH, WINDOW_HEIGHT, "Code Crimson", 1, 1);
-    res := vulkan_surface_create(vulkan_context.window, vulkan_context.instance, *vulkan_context.surface);
+    vulkan_context.window = create_window(WINDOW_WIDTH, WINDOW_HEIGHT, "Code Crimson");
+    res : bool;
+    vulkan_context.surface, res = vulkan_surface_create(vulkan_context.window, vulkan_context.instance);
     if !res return;
     log(.INFO, "Vulkan surface successfully created.");
     res = vulkan_device_create(*vulkan_context);
     if !res return;
     defer vkDestroyDevice(vulkan_context.device, null);
     log(.INFO, "Vulkan device successfully created.");
-    res = swapchain_create(*vulkan_context, *vulkan_context.swapchain);
+    vulkan_context.swapchain, res = swapchain_create(vulkan_context.window, vulkan_context.surface, vulkan_context.device, vulkan_context.physical_device, vulkan_context.queue_indices);
     if !res return;
     defer swapchain_cleanup(*vulkan_context);
     vulkan_context.command_pool, res = command_pool_create(vulkan_context.device, cast(u32)vulkan_context.queue_indices[Queue_Family.GRAPHICS]);
@@ -94,7 +95,6 @@ main :: () {
 }
 
 begin_frame :: (using vulkan_context: *Vulkan_Context, delta_time: float64) {
-    log(.INFO, "Begin frame");
     u64_low, u64_high := get_integer_range(u64);
     res : bool;
     ind : u32;
@@ -141,7 +141,6 @@ end_frame :: (using vulkan_context: *Vulkan_Context) {
 }
 
 draw_frame :: (using vulkan_context : Vulkan_Context) {
-    log(.INFO, "Draw frame");
     vkCmdBindPipeline(command_buffers[curr_frame], .GRAPHICS, pipeline.handle);
     vertex_buffers := VkBuffer.[vertex_buffer.handle];
     offsets := VkDeviceSize.[0];

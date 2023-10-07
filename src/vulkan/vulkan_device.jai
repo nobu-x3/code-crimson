@@ -1,7 +1,8 @@
 #import "Hash_Table";
 
 vulkan_device_create :: (vulkan_context: *Vulkan_Context) -> bool #must {
-    res := get_suitable_physical_device(vulkan_context);
+    res : bool;
+    vulkan_context.physical_device, res = get_suitable_physical_device(vulkan_context.instance, vulkan_context.surface);
     if !res {
         log(.FATAL, "Failed to get a suitable physical device.");
     }
@@ -53,14 +54,14 @@ print_available_vulkan_extensions :: () {
     for extension_array log(.INFO, "    % (%)", to_string(it.extensionName.data), it.specVersion);
 }
 
-get_suitable_physical_device :: (vulkan_context: *Vulkan_Context) -> bool {
+get_suitable_physical_device :: (instance: VkInstance, surface: VkSurfaceKHR, swapchain_description: *Swapchain_Description = null) -> VkPhysicalDevice, bool #must {
     device_count : u32;
-    vkEnumeratePhysicalDevices(vulkan_context.instance, *device_count, null);
+    vkEnumeratePhysicalDevices(instance, *device_count, null);
     devices : [..]VkPhysicalDevice;
     devices.allocator = temp;
     array_resize(*devices, device_count);
-    vkEnumeratePhysicalDevices(vulkan_context.instance, *device_count, devices.data);
-    suitability :: (vulkan_context: *Vulkan_Context, dev: VkPhysicalDevice) -> int {
+    vkEnumeratePhysicalDevices(instance, *device_count, devices.data);
+    suitability :: (surface: VkSurfaceKHR, swapchain_desc: *Swapchain_Description, dev: VkPhysicalDevice) -> int {
         props : VkPhysicalDeviceProperties;
         features: VkPhysicalDeviceFeatures;
         vkGetPhysicalDeviceProperties(dev, *props);
@@ -69,24 +70,27 @@ get_suitable_physical_device :: (vulkan_context: *Vulkan_Context) -> bool {
         if props.deviceType == .DISCRETE_GPU score += 1000;
         score += cast(int)props.limits.maxImageDimension2D;
         if !device_check_extension_support(dev) return 0;
-        res : bool;
-        vulkan_context.swapchain.support, res = device_query_swapchain_details(vulkan_context, dev);
-        if !res || vulkan_context.swapchain.support.formats.count == 0 || vulkan_context.swapchain.support.present_modes.count == 0 return 0;
+        if swapchain_desc {
+            res : bool;
+            swapchain_desc.*, res = device_query_swapchain_details(surface, dev);
+            if !res || swapchain_desc.formats.count == 0 || swapchain_desc.present_modes.count == 0 return 0;
+        }
         return score;
     }
     hiscore := 0;
+    phys_dev : VkPhysicalDevice;
     for devices {
-        score := suitability(vulkan_context, it);
+        score := suitability(surface, swapchain_description, it );
         if score > hiscore {
-            vulkan_context.physical_device = it;
+            phys_dev = it;
             hiscore = score;
         }
     }
      if(hiscore == 0){
         log(.FATAL, "Failed to find suitable GPU.");
-        return false;
+        return phys_dev, false;
     }
-    return true;
+    return phys_dev, true;
 }
 
 device_check_extension_support :: (physical_device : VkPhysicalDevice) -> bool {
@@ -133,22 +137,22 @@ device_check_extension_support :: (physical_device : VkPhysicalDevice) -> bool {
 }
 
 
-device_query_swapchain_details :: (vulkan_context : *Vulkan_Context, dev: VkPhysicalDevice) -> Swapchain_Description, bool {
+device_query_swapchain_details :: (surface: VkSurfaceKHR, dev: VkPhysicalDevice) -> Swapchain_Description, bool {
     desc : Swapchain_Description;
-    res := vkGetPhysicalDeviceSurfaceCapabilitiesKHR(dev, vulkan_context.surface, *desc.capabilities);
+    res := vkGetPhysicalDeviceSurfaceCapabilitiesKHR(dev, surface, *desc.capabilities);
     if res != .SUCCESS {
         log(.FATAL, "Failed to query physical device's surface capabilities.");
         return desc, false;
     }
     format_count : u32;
-    res = vkGetPhysicalDeviceSurfaceFormatsKHR(dev, vulkan_context.surface, *format_count, null);
+    res = vkGetPhysicalDeviceSurfaceFormatsKHR(dev, surface, *format_count, null);
     if res != .SUCCESS {
         log(.FATAL, "Failed to query physical device's surface formats.");
         return desc, false;
     }
     if format_count > 0 {
         array_reserve(*desc.formats, format_count);
-        res = vkGetPhysicalDeviceSurfaceFormatsKHR(dev, vulkan_context.surface, *format_count, desc.formats.data);
+        res = vkGetPhysicalDeviceSurfaceFormatsKHR(dev, surface, *format_count, desc.formats.data);
         if res != .SUCCESS {
             log(.FATAL, "Failed to populate physical device's surface formats.");
             return desc, false;
@@ -156,14 +160,14 @@ device_query_swapchain_details :: (vulkan_context : *Vulkan_Context, dev: VkPhys
         desc.formats.count = format_count;
     }
     present_mode_count : u32;
-    res = vkGetPhysicalDeviceSurfacePresentModesKHR(dev, vulkan_context.surface, *present_mode_count, null);
+    res = vkGetPhysicalDeviceSurfacePresentModesKHR(dev, surface, *present_mode_count, null);
     if res != .SUCCESS {
         log(.FATAL, "Failed to query physical device's surface formats.");
         return desc, false;
     }
     if present_mode_count > 0 {
         array_reserve(*desc.present_modes, present_mode_count);
-        res = vkGetPhysicalDeviceSurfacePresentModesKHR(dev, vulkan_context.surface, *present_mode_count, desc.present_modes.data);
+        res = vkGetPhysicalDeviceSurfacePresentModesKHR(dev, surface, *present_mode_count, desc.present_modes.data);
         if res != .SUCCESS {
             log(.FATAL, "Failed to populate physical device's surface formats.");
             return desc, false;
@@ -196,9 +200,9 @@ find_queue_families :: (vulkan_context: *Vulkan_Context) {
     }
 }
 
-device_find_mem_index :: (vulkan_context: *Vulkan_Context, types_filter: u32, mem_flags: VkMemoryPropertyFlags) -> int {
+device_find_mem_index :: (physical_device: VkPhysicalDevice, types_filter: u32, mem_flags: VkMemoryPropertyFlags) -> int {
     mem_props : VkPhysicalDeviceMemoryProperties;
-    vkGetPhysicalDeviceMemoryProperties(vulkan_context.physical_device, *mem_props);
+    vkGetPhysicalDeviceMemoryProperties(physical_device, *mem_props);
     for 0..mem_props.memoryTypeCount {
         if types_filter & (1 << it) && mem_props.memoryTypes[it].propertyFlags == mem_flags {
             return it;

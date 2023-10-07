@@ -94,16 +94,17 @@ vulkan_deinit :: (instance: VkInstance, vulkan_context: Vulkan_Context) {
     vkDestroyInstance(instance, null);
 }
 
-vulkan_surface_create :: (window: Window_Type, instance: VkInstance, out_surface: *VkSurfaceKHR) -> bool {
+vulkan_surface_create :: (window: Window_Type, instance: VkInstance) -> VkSurfaceKHR, bool #must {
+    out_surface: VkSurfaceKHR;
     #if OS == .LINUX {
         surface_ci : VkXlibSurfaceCreateInfoKHR;
         surface_ci.window = window;
         surface_ci.dpy = x_global_display;
-        surface_result := vkCreateXlibSurfaceKHR(instance, *surface_ci, null, out_surface);
+        surface_result := vkCreateXlibSurfaceKHR(instance, *surface_ci, null, *out_surface);
         log(.INFO, "Surface result: %", surface_result);
         if surface_result != .SUCCESS {
             log(.FATAL, "Failed to create xlib surface. Error: %", surface_result);
-            return false;
+            return out_surface, false;
         }
     } else {
         my_hwnd := window;
@@ -111,13 +112,13 @@ vulkan_surface_create :: (window: Window_Type, instance: VkInstance, out_surface
         surface_ci.sType     = .WIN32_SURFACE_CREATE_INFO_KHR;
         surface_ci.hinstance = GetModuleHandleW(null);
         surface_ci.hwnd      = my_hwnd;
-        result := vkCreateWin32SurfaceKHR(instance, *surface_ci, null, out_surface);
+        result := vkCreateWin32SurfaceKHR(instance, *surface_ci, null, *out_surface);
         if result != .SUCCESS {
             log(.FATAL, "Failed to create xlib surface. Error: %", result);
-            return false;
+            return out_surface, false;
         }
     }
-    return true;
+    return out_surface, true;
 }
 
 create_sync_objects :: (using vulkan_context: *Vulkan_Context) -> bool #must{
