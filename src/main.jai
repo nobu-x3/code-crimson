@@ -51,11 +51,9 @@ main :: () {
     if !res return;
     defer render_pass_destroy(vulkan_context.device, *vulkan_context.main_render_pass);
     create_command_buffers_default(*vulkan_context);
-    vulkan_context.pipeline, res = graphics_pipeline_create(vulkan_context.device, vulkan_context.main_render_pass, 
-                                VkViewport.{x = 0, y = 0, width = WINDOW_WIDTH, height = WINDOW_HEIGHT, 
-                                            minDepth = 0, maxDepth = 1}, VkRect2D.{},
-                                        "bin/assets/shaders/shader_builtin.vert.spv",
-                                        "bin/assets/shaders/shader_builtin.frag.spv");
+    builder : Pipeline_Builder;
+    pipeline_builder_default(*builder, vulkan_context.device, vulkan_context.main_render_pass);
+    vulkan_context.pipeline, res = pipeline_build(*builder);
     if !res return;
     defer vkDestroyPipelineLayout(vulkan_context.device, vulkan_context.pipeline.layout, null);
     defer vkDestroyPipeline(vulkan_context.device, vulkan_context.pipeline.handle, null);

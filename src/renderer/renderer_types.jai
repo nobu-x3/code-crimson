@@ -12,3 +12,7 @@ SRT :: struct {
 Transform :: struct {
     matrix: Matrix4 = Matrix4_Identity;
 }
+
+Mesh :: struct {
+
+}

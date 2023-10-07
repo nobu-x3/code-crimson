@@ -48,6 +48,30 @@ Queue_Family :: enum u8 {
     PRESENT :: 1;
 }
 
+Pipeline_Builder :: struct {
+    device: VkDevice;
+    render_pass_handle: VkRenderPass;
+    input_assembly_ci : VkPipelineInputAssemblyStateCreateInfo;
+    vertex_binding_desc: VkVertexInputBindingDescription;
+    vertex_attribute_descs: [..]VkVertexInputAttributeDescription;
+    vertex_input_ci: VkPipelineVertexInputStateCreateInfo;
+    rasterizer_ci: VkPipelineRasterizationStateCreateInfo;
+    multisampling_ci: VkPipelineMultisampleStateCreateInfo;
+    depth_stencil_ci: VkPipelineDepthStencilStateCreateInfo;
+    color_blend_attach_state: VkPipelineColorBlendAttachmentState;
+    color_blending_ci: VkPipelineColorBlendStateCreateInfo;
+    dynamic_states: [..]VkDynamicState;
+    dynamic_state_ci: VkPipelineDynamicStateCreateInfo;
+    viewports: [..]VkViewport;
+    scissors: [..]VkRect2D;
+    viewport_state_ci: VkPipelineViewportStateCreateInfo;
+    push_constant_range: VkPushConstantRange;
+    pipeline_layout_ci: VkPipelineLayoutCreateInfo;
+    shader_stages: [..]VkPipelineShaderStageCreateInfo;
+    pipeline_ci: VkGraphicsPipelineCreateInfo;
+    shader_modules: [..]VkShaderModule;
+}
+
 Swapchain :: struct {
     handle: VkSwapchainKHR;
     images: [..]VkImage;
