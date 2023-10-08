@@ -3,6 +3,9 @@ WINDOW_WIDTH :: 640;
 WINDOW_HEIGHT :: 480;
 QUEUE_COUNT :: #run enum_highest_value(Queue_Family) + 1;
 
+Global_Descriptor_Set :: struct {
+    camera: Camera; @Uniform
+}
 
 Vertex :: struct {
     pos: [2]float32;
@@ -26,6 +29,12 @@ Buffer :: struct {
 
 Render_Pass_Begin_Info :: struct {
     single_use, render_pass_continue, simultaneous_use: bool;
+}
+
+Descriptor_Set :: struct {
+    handle: VkDescriptorSet;
+    layout: VkDescriptorSetLayout;
+    buffers: [..]Buffer;
 }
 
 Render_Pass :: struct {

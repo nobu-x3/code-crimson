@@ -84,6 +84,8 @@ main :: () {
     defer buffer_destroy(vulkan_context.device, vulkan_context.index_buffer);
     vulkan_context.camera = camera_create(radians(70.0), cast(float)WINDOW_WIDTH/WINDOW_HEIGHT, 0.1, 1000);
     exit := false;
+    set : Descriptor_Set;
+    set, res = descriptor_set_create(Global_Descriptor_Set, vulkan_context.swapchain.image_count, vulkan_context.device, vulkan_context.physical_device, .VERTEX_BIT);
     while !exit {
         update_window_events();
         for events_this_frame {

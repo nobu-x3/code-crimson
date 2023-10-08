@@ -16,6 +16,7 @@
 #load "vulkan_graphics_pipeline.jai";
 #load "vulkan_shader_module.jai";
 #load "vulkan_buffer.jai";
+#load "vulkan_descriptor.jai";
 
 DEBUG :: true;  
 
