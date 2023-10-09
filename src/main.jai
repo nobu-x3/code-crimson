@@ -52,7 +52,7 @@ main :: () {
     defer render_pass_destroy(vulkan_context.device, *vulkan_context.main_render_pass);
     create_command_buffers_default(*vulkan_context);
     vulkan_context.camera = camera_create(radians(70.0), cast(float)WINDOW_WIDTH/WINDOW_HEIGHT, 0.1, 1000);
-    vulkan_context.global_descriptor_set, res = descriptor_set_create(Global_Descriptor_Set, vulkan_context.swapchain.image_count, vulkan_context.device, vulkan_context.physical_device, null, .VERTEX_BIT);
+    vulkan_context.global_descriptor_set, res = descriptor_set_create(Global_Descriptor_Set, vulkan_context.swapchain.image_count, vulkan_context.device, vulkan_context.physical_device, null);
     if !res return;
     defer descriptor_set_destroy(vulkan_context.device, *vulkan_context.global_descriptor_set, true);
     builder : Pipeline_Builder;

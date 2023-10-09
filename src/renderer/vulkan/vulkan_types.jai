@@ -5,7 +5,7 @@ QUEUE_COUNT :: #run enum_highest_value(Queue_Family) + 1;
 
 // Each member represents a new binding
 Global_Descriptor_Set :: struct {
-    camera: Camera; @Uniform
+    camera: Camera; @Uniform @Vertex
 }
 
 Vertex :: struct {
