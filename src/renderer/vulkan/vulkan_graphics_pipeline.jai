@@ -1,7 +1,7 @@
 #import "File";
 #import "String";
 
-pipeline_builder_default:: (using builder: *Pipeline_Builder, logical_device: VkDevice, render_pass: Render_Pass) {
+pipeline_builder_default:: (using builder: *Pipeline_Builder, logical_device: VkDevice, render_pass: Render_Pass, global_descriptor_layout: VkDescriptorSetLayout) {
     device = logical_device;
     render_pass_handle = render_pass.handle;
     viewport := VkViewport.{x = 0, y = 0, width = WINDOW_WIDTH, height = WINDOW_HEIGHT, 
@@ -126,9 +126,7 @@ pipeline_builder_default:: (using builder: *Pipeline_Builder, logical_device: Vk
     set_ci := VkDescriptorSetLayoutCreateInfo.{
         bindingCount = 1, pBindings = *cam_buffer_binding
     };
-    global_layout : VkDescriptorSetLayout;
-    vkCreateDescriptorSetLayout(device, *set_ci, null, *global_layout);
-    array_add(*descriptor_set_layouts, global_layout);
+    array_add(*descriptor_set_layouts, global_descriptor_layout);
     pipeline_layout_ci = VkPipelineLayoutCreateInfo.{
         setLayoutCount = cast(u32)descriptor_set_layouts.count, 
         pSetLayouts = descriptor_set_layouts.data, pushConstantRangeCount = 1,
@@ -176,9 +174,6 @@ pipeline_build :: (using builder: *Pipeline_Builder) -> Pipeline, bool #must {
     defer {
         for shader_modules {
             shader_module_destroy(device, it);
-        }
-        for descriptor_set_layouts {
-            vkDestroyDescriptorSetLayout(device, it, null);
         }
     }
     res = vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, *pipeline_ci, null, *pipeline.handle);

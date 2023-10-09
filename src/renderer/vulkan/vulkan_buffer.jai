@@ -66,7 +66,7 @@ buffer_create_and_copy :: (logical_device: VkDevice, physical_device: VkPhysical
     };
     staging, res := buffer_create(logical_device, physical_device, size_of(T), data.count, .TRANSFER_SRC_BIT, .HOST_VISIBLE_BIT | .HOST_COHERENT_BIT);
     if !res {
-        log(.FATAL, "Failed to create vertex buffer because staging buffer creation failed.");
+        log(.FATAL, "Failed to create buffer because staging buffer creation failed.");
         return out_buffer, false;
     }
     mapped_data : *void;
@@ -75,11 +75,18 @@ buffer_create_and_copy :: (logical_device: VkDevice, physical_device: VkPhysical
     vkUnmapMemory(logical_device, staging.memory);
     out_buffer, res = buffer_create(logical_device, physical_device, size_of(T), data.count, .TRANSFER_DST_BIT | usage, .DEVICE_LOCAL_BIT);
     if !res {
-        log(.FATAL, "Failed to create vertex buffer after creating a staging buffer.");
+        log(.FATAL, "Failed to create buffer after creating a staging buffer.");
         return out_buffer, false;
     }
     buffer_copy(logical_device, command_pool, queue, staging, out_buffer, out_buffer.size);
     vkFreeMemory(logical_device, staging.memory, null);
     vkDestroyBuffer(logical_device, staging.handle, null);
     return out_buffer, true;
+}
+
+buffer_write :: (device: VkDevice, buffer: *Buffer, data: []$T) {
+    mapped_data : *void;
+    vkMapMemory(device, buffer.memory, 0, buffer.size, 0, *mapped_data);
+    memcpy(mapped_data, data.data, cast(int)buffer.size);
+    vkUnmapMemory(device, buffer.memory);
 }

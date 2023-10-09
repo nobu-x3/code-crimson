@@ -51,8 +51,12 @@ main :: () {
     if !res return;
     defer render_pass_destroy(vulkan_context.device, *vulkan_context.main_render_pass);
     create_command_buffers_default(*vulkan_context);
+    vulkan_context.camera = camera_create(radians(70.0), cast(float)WINDOW_WIDTH/WINDOW_HEIGHT, 0.1, 1000);
+    vulkan_context.global_descriptor_set, res = descriptor_set_create(Global_Descriptor_Set, vulkan_context.swapchain.image_count, vulkan_context.device, vulkan_context.physical_device, null, .VERTEX_BIT);
+    if !res return;
+    defer descriptor_set_destroy(vulkan_context.device, *vulkan_context.global_descriptor_set, true);
     builder : Pipeline_Builder;
-    pipeline_builder_default(*builder, vulkan_context.device, vulkan_context.main_render_pass);
+    pipeline_builder_default(*builder, vulkan_context.device, vulkan_context.main_render_pass, vulkan_context.global_descriptor_set.layout);
     vulkan_context.pipeline, res = pipeline_build(*builder);
     if !res return;
     defer vkDestroyPipelineLayout(vulkan_context.device, vulkan_context.pipeline.layout, null);
@@ -82,10 +86,7 @@ main :: () {
                             vulkan_context.command_pool, vulkan_context.queues[Queue_Family.GRAPHICS], indices);
     if !res return;
     defer buffer_destroy(vulkan_context.device, vulkan_context.index_buffer);
-    vulkan_context.camera = camera_create(radians(70.0), cast(float)WINDOW_WIDTH/WINDOW_HEIGHT, 0.1, 1000);
     exit := false;
-    set : Descriptor_Set;
-    set, res = descriptor_set_create(Global_Descriptor_Set, vulkan_context.swapchain.image_count, vulkan_context.device, vulkan_context.physical_device, .VERTEX_BIT);
     while !exit {
         update_window_events();
         for events_this_frame {
@@ -157,12 +158,17 @@ frame_nr := 0;
 draw_frame :: (using vulkan_context : Vulkan_Context) {
     cam_pos := Vector3.{0, 0, -10};
     view := make_translation_matrix4(cam_pos);
-    view_proj := camera.projection * view;
+    camera.view_proj = camera.projection * view;
+    global_data := Global_Descriptor_Set.[.{
+        camera = camera
+    }];
+    buffer_write(device, *global_descriptor_set.buffers[curr_frame], global_data);
     rot_q : Quaternion = ---; 
     set_from_axis_and_angle(*rot_q, .{0, 1, 0}, radians(frame_nr * 0.04));
     model := rotation_matrix(Matrix4, rot_q);
-    push_constants := Mesh_Push_Constants.{render_matrix = view_proj * model};
+    push_constants := Mesh_Push_Constants.{render_matrix = model};
     vkCmdBindPipeline(command_buffers[curr_frame], .GRAPHICS, pipeline.handle);
+    vkCmdBindDescriptorSets(command_buffers[curr_frame], .GRAPHICS, pipeline.layout, 0, 1, *global_descriptor_set.handles[curr_frame], 0, null);
     vertex_buffers := VkBuffer.[vertex_buffer.handle];
     offsets := VkDeviceSize.[0];
     vkCmdBindVertexBuffers(command_buffers[curr_frame], 0, 1, vertex_buffers.data, offsets.data);

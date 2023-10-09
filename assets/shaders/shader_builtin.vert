@@ -7,6 +7,12 @@ layout(push_constant) uniform constants{
     mat4 render_matrix;
 } push_constants;
 
+layout(set = 0, binding = 0) uniform  CameraBuffer{
+	mat4 proj;
+	mat4 viewproj;
+} cameraData;
+
 void main () {
-	gl_Position = push_constants.render_matrix * vec4 (in_position, 1.0);
+    mat4 transformMatrix = (push_constants.render_matrix * cameraData.viewproj);
+	gl_Position = transformMatrix * vec4 (in_position, 1.0);
 }
