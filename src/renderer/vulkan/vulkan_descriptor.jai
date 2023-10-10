@@ -164,7 +164,7 @@ descriptor_set_builder_build_set :: (using builder: *Descriptor_Set_Builder, $T:
         return sets, res;
     }
     sets : [..]VkDescriptorSet;
-    array_resize(*sets, image_count);
+    array_reserve(*sets, image_count);
     for 0..image_count {
         set : VkDescriptorSet;
         alloc_info := VkDescriptorSetAllocateInfo.{
@@ -177,8 +177,11 @@ descriptor_set_builder_build_set :: (using builder: *Descriptor_Set_Builder, $T:
         }
         array_add(*sets, set);
     }
+    for sets {
+        log(.INFO, "%", it);
+    }
     table_add(*set_map, tis.name, sets);
-    return set, true;
+    return sets, true;
 }
 
 descriptor_set_builder_create_buffer :: (using builder: *Descriptor_Set_Builder, $set: Type, $member: Type) -> [..]Buffer, bool #must 
@@ -223,6 +226,8 @@ descriptor_set_builder_create_buffer :: (using builder: *Descriptor_Set_Builder,
     tis_member := cast(*Type_Info_Struct)ti_member;
     buffers : [..]Buffer;
     found := false;
+    sets, sets_res := table_find(*set_map, tis_set.name);
+    // @TODO: updating descriptor sets separately is inefficient.
     for tis_set.members {
         if it.type == ti_member {
             found = true;
@@ -230,9 +235,7 @@ descriptor_set_builder_create_buffer :: (using builder: *Descriptor_Set_Builder,
                 if note == {
                     case "Uniform";
                         assert(buffers.count == 0, "There should only be one type annotation per member.\n");
-                        sets := table_find_pointer(*set_map, tis_set.name);
                         for frame: 0..image_count - 1 {
-                            // @TODO: figure out padding stuff
                             buf, res := buffer_create(device, physical_device, ti_member.runtime_size, 1, .UNIFORM_BUFFER_BIT, .DEVICE_LOCAL_BIT);
                             if !res {
                                 log(.FATAL, "Failed to create buffer for type % when creating descriptor set.", tis_member.name);
@@ -242,7 +245,7 @@ descriptor_set_builder_create_buffer :: (using builder: *Descriptor_Set_Builder,
                                 buffer = buf.handle, offset = 0, range = cast(u64)ti_member.runtime_size
                             };
                             set_write := VkWriteDescriptorSet.{
-                                dstBinding = cast(u32)it_index, dstSet = set.*, descriptorCount = 1,
+                                dstBinding = cast(u32)it_index, dstSet = sets[frame], descriptorCount = 1,
                                 descriptorType = .UNIFORM_BUFFER, pBufferInfo = *buf_info
                             };
                             vkUpdateDescriptorSets(device, 1, *set_write, 0, null);
@@ -257,14 +260,17 @@ descriptor_set_builder_create_buffer :: (using builder: *Descriptor_Set_Builder,
                         }
                         array_add(*buffers, buf);
                         set := table_find_pointer(*set_map, tis_set.name);
-                        buf_info := VkDescriptorBufferInfo.{
-                            buffer = buf.handle, offset = 0, range = cast(u64)ti_member.runtime_size
-                        };
-                        set_write := VkWriteDescriptorSet.{
-                            dstBinding = cast(u32)it_index, dstSet = set.*, descriptorCount = 1,
-                            descriptorType = .UNIFORM_BUFFER, pBufferInfo = *buf_info
-                        };
-                        vkUpdateDescriptorSets(device, 1, *set_write, 0, null);
+                        // @TODO: figure out padding stuff, offset is incorrect
+                        for frame:0..image_count {
+                            buf_info := VkDescriptorBufferInfo.{
+                                buffer = buf.handle, offset = 0, range = cast(u64)ti_member.runtime_size
+                            };
+                            set_write := VkWriteDescriptorSet.{
+                                dstBinding = cast(u32)it_index, dstSet = sets[frame], descriptorCount = 1,
+                                descriptorType = .UNIFORM_BUFFER_DYNAMIC, pBufferInfo = *buf_info
+                            };
+                            vkUpdateDescriptorSets(device, 1, *set_write, 0, null);
+                        }
                         array_add(*buffers, buf);
                 }
             }
