@@ -36,7 +36,6 @@ Descriptor_Set :: struct {
     handles: [..]VkDescriptorSet;
     layout: VkDescriptorSetLayout;
     buffers: [..]Buffer;
-    pool: VkDescriptorPool;
 }
 
 Render_Pass :: struct {
@@ -148,6 +147,7 @@ Vulkan_Context :: struct {
     vertex_buffer: Buffer;
     index_buffer: Buffer;
     pipeline: Pipeline;
+    descriptor_pool : VkDescriptorPool;
     global_descriptor_set: Descriptor_Set;
     curr_frame : u32;
     image_index : u32;

@@ -52,9 +52,19 @@ main :: () {
     defer render_pass_destroy(vulkan_context.device, *vulkan_context.main_render_pass);
     create_command_buffers_default(*vulkan_context);
     vulkan_context.camera = camera_create(radians(70.0), cast(float)WINDOW_WIDTH/WINDOW_HEIGHT, 0.1, 1000);
-    vulkan_context.global_descriptor_set, res = descriptor_set_create(Global_Descriptor_Set, vulkan_context.swapchain.image_count, vulkan_context.device, vulkan_context.physical_device, null);
+
+    set_builder := descriptor_set_builder_init(vulkan_context.device, vulkan_context.physical_device, vulkan_context.swapchain.image_count);
+    descriptor_set_builder_add_type(*set_builder, Global_Descriptor_Set);
+    vulkan_context.descriptor_pool, res = descriptor_set_builder_create_pool(*set_builder);
     if !res return;
-    defer descriptor_set_destroy(vulkan_context.device, *vulkan_context.global_descriptor_set, true);
+    vulkan_context.global_descriptor_set.layout, res = descriptor_set_builder_build_layout(*set_builder, Global_Descriptor_Set);
+    if !res return;
+    vulkan_context.global_descriptor_set.handles, res = descriptor_set_builder_build_set(*set_builder, Global_Descriptor_Set);
+    if !res return;
+    vulkan_context.global_descriptor_set.buffers, res = descriptor_set_builder_create_buffer(*set_builder, Global_Descriptor_Set, Camera);
+    if !res return;
+
+    defer descriptor_set_destroy(vulkan_context.device, *vulkan_context.global_descriptor_set, *vulkan_context.descriptor_pool);
     builder : Pipeline_Builder;
     pipeline_builder_default(*builder, vulkan_context.device, vulkan_context.main_render_pass, vulkan_context.global_descriptor_set.layout);
     vulkan_context.pipeline, res = pipeline_build(*builder);
