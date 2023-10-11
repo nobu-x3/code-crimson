@@ -262,7 +262,6 @@ descriptor_set_builder_create_buffer :: (using builder: *Descriptor_Set_Builder,
                         }
                         array_add(*buffers, buf);
                         set := table_find_pointer(*set_map, tis_set.name);
-                        // @TODO: figure out padding stuff, offset is incorrect
                         for frame:0..image_count {
                             buf_info := VkDescriptorBufferInfo.{
                                 buffer = buf.handle, offset = 0, range = cast(u64)ti_member.runtime_size

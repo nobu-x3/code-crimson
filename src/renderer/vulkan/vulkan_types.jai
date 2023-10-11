@@ -6,6 +6,12 @@ QUEUE_COUNT :: #run enum_highest_value(Queue_Family) + 1;
 // Each member represents a new binding
 Global_Descriptor_Set :: struct {
     camera: Camera; @Uniform @Vertex
+    backdrop: Backdrop; @UniformDynamic @Vertex @Fragment
+}
+
+Backdrop :: struct {
+    color: Vector4;
+    distance: Vector4;
 }
 
 Vertex :: struct {
@@ -75,6 +81,7 @@ Pipeline_Builder :: struct {
     color_blending_ci: VkPipelineColorBlendStateCreateInfo;
     dynamic_states: [..]VkDynamicState;
     dynamic_state_ci: VkPipelineDynamicStateCreateInfo;
+    backdrop_buffer: Buffer;
     viewports: [..]VkViewport;
     scissors: [..]VkRect2D;
     viewport_state_ci: VkPipelineViewportStateCreateInfo;
