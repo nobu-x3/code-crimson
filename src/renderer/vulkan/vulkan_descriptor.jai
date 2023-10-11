@@ -32,6 +32,7 @@ Descriptor_Set_Builder :: struct {
     set_map: Table(string, [..]VkDescriptorSet);
     sizes : [..]VkDescriptorPoolSize;
     pool: VkDescriptorPool;
+    props : VkPhysicalDeviceProperties;
     image_count: u32;
 }
 
@@ -48,6 +49,7 @@ descriptor_set_builder_init :: (logical_device: VkDevice, phys_device: VkPhysica
     table_ensure_space(*layout_map, 4);
     table_ensure_space(*set_map, 4);
     array_reserve(*sizes, 8);
+    vkGetPhysicalDeviceProperties(phys_device, *props);
     return builder;
 }
 
@@ -253,7 +255,7 @@ descriptor_set_builder_create_buffer :: (using builder: *Descriptor_Set_Builder,
                         }
                     case "UniformDynamic";
                         assert(buffers.count == 0, "There should only be one type annotation per member.\n");
-                        buf, res := buffer_create(device, physical_device, ti_member.runtime_size * image_count, 1, .UNIFORM_BUFFER_BIT, .DEVICE_LOCAL_BIT);
+                        buf, res := buffer_create(device, physical_device, cast(int)pad_uniform_buffer_size(builder, cast(u64)ti_member.runtime_size), image_count, .UNIFORM_BUFFER_BIT, .DEVICE_LOCAL_BIT);
                         if !res {
                             log(.FATAL, "Failed to create buffer for type % when creating descriptor set.", tis_member.name);
                             return buffers, false; 
@@ -277,4 +279,14 @@ descriptor_set_builder_create_buffer :: (using builder: *Descriptor_Set_Builder,
         }
     }
     return buffers, true;
+}
+
+#scope_file
+pad_uniform_buffer_size :: (using builder: *Descriptor_Set_Builder, original_size : u64) -> u64 {
+    min_alignment := props.limits.minUniformBufferOffsetAlignment;
+    aligned_size := original_size;
+    if min_alignment > 0 {
+        aligned_size = (aligned_size + min_alignment - 1) & ~(min_alignment - 1);
+    }
+    return aligned_size;
 }

@@ -26,6 +26,7 @@ Buffer :: struct {
     memory: VkDeviceMemory;
     length: int;
     size: VkDeviceSize;
+    stride: int;
 }
 
 Render_Pass_Begin_Info :: struct {

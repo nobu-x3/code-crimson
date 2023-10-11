@@ -1,7 +1,7 @@
 
 buffer_create :: (logical_device: VkDevice, physical_device: VkPhysicalDevice, member_size: int, 
                     count: int, usage: VkBufferUsageFlags, mem_props: VkMemoryPropertyFlags) -> Buffer, bool #must {
-    buffer := Buffer.{size = cast(VkDeviceSize)(member_size * count), length = count};
+    buffer := Buffer.{size = cast(VkDeviceSize)(member_size * count), length = count, stride = member_size};
     buffer_ci := VkBufferCreateInfo.{
         size = cast(VkDeviceSize)(member_size * count),
         usage = usage,
