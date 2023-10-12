@@ -63,7 +63,11 @@ main :: () {
     if !res return;
     vulkan_context.global_descriptor_set.buffers, res = descriptor_set_builder_create_buffer(*set_builder, Global_Descriptor_Set, Camera);
     if !res return;
-
+    amb : [..]Buffer;
+    amb, res = descriptor_set_builder_create_buffer(*set_builder, Global_Descriptor_Set, Backdrop);
+    if !res return;
+    vulkan_context.ambient_buffer = amb[0];
+    defer buffer_destroy(vulkan_context.device, vulkan_context.ambient_buffer);
     defer descriptor_set_destroy(vulkan_context.device, *vulkan_context.global_descriptor_set, *vulkan_context.descriptor_pool);
     builder : Pipeline_Builder;
     pipeline_builder_default(*builder, vulkan_context.device, vulkan_context.main_render_pass, vulkan_context.global_descriptor_set.layout);
@@ -172,13 +176,19 @@ draw_frame :: (using vulkan_context : Vulkan_Context) {
     global_data := Global_Descriptor_Set.[.{
         camera = camera
     }];
+    framed := frame_nr / 120.0;
+    backdrop := Backdrop.[.{
+        color = .{r = sin(framed), g = 0, b = cos(framed), a = 1}
+    }];
     buffer_write(device, *global_descriptor_set.buffers[curr_frame], global_data);
+    buffer_write(device, *ambient_buffer, backdrop, ambient_buffer.stride * curr_frame);
     rot_q : Quaternion = ---; 
     set_from_axis_and_angle(*rot_q, .{0, 1, 0}, radians(frame_nr * 0.04));
     model := rotation_matrix(Matrix4, rot_q);
     push_constants := Mesh_Push_Constants.{render_matrix = model};
     vkCmdBindPipeline(command_buffers[curr_frame], .GRAPHICS, pipeline.handle);
-    vkCmdBindDescriptorSets(command_buffers[curr_frame], .GRAPHICS, pipeline.layout, 0, 1, *global_descriptor_set.handles[curr_frame], 0, null);
+    uniform_offset := cast(u32)(ambient_buffer.stride * curr_frame);
+    vkCmdBindDescriptorSets(command_buffers[curr_frame], .GRAPHICS, pipeline.layout, 0, 1, *global_descriptor_set.handles[curr_frame], 1, *uniform_offset);
     vertex_buffers := VkBuffer.[vertex_buffer.handle];
     offsets := VkDeviceSize.[0];
     vkCmdBindVertexBuffers(command_buffers[curr_frame], 0, 1, vertex_buffers.data, offsets.data);

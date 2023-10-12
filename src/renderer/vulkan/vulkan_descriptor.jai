@@ -179,9 +179,6 @@ descriptor_set_builder_build_set :: (using builder: *Descriptor_Set_Builder, $T:
         }
         array_add(*sets, set);
     }
-    for sets {
-        log(.INFO, "%", it);
-    }
     table_add(*set_map, tis.name, sets);
     return sets, true;
 }
@@ -230,10 +227,10 @@ descriptor_set_builder_create_buffer :: (using builder: *Descriptor_Set_Builder,
     found := false;
     sets, sets_res := table_find(*set_map, tis_set.name);
     // @TODO: updating descriptor sets separately is inefficient.
-    for tis_set.members {
-        if it.type == ti_member {
+    for member,index:tis_set.members {
+        if member.type == ti_member {
             found = true;
-            for note: it.notes {
+            for note: member.notes {
                 if note == {
                     case "Uniform";
                         assert(buffers.count == 0, "There should only be one type annotation per member.\n");
@@ -247,7 +244,7 @@ descriptor_set_builder_create_buffer :: (using builder: *Descriptor_Set_Builder,
                                 buffer = buf.handle, offset = 0, range = cast(u64)ti_member.runtime_size
                             };
                             set_write := VkWriteDescriptorSet.{
-                                dstBinding = cast(u32)it_index, dstSet = sets[frame], descriptorCount = 1,
+                                dstBinding = cast(u32)index, dstSet = sets[frame], descriptorCount = 1,
                                 descriptorType = .UNIFORM_BUFFER, pBufferInfo = *buf_info
                             };
                             vkUpdateDescriptorSets(device, 1, *set_write, 0, null);
@@ -267,7 +264,7 @@ descriptor_set_builder_create_buffer :: (using builder: *Descriptor_Set_Builder,
                                 buffer = buf.handle, offset = 0, range = cast(u64)ti_member.runtime_size
                             };
                             set_write := VkWriteDescriptorSet.{
-                                dstBinding = cast(u32)it_index, dstSet = sets[frame], descriptorCount = 1,
+                                dstBinding = cast(u32)index, dstSet = sets[frame], descriptorCount = 1,
                                 descriptorType = .UNIFORM_BUFFER_DYNAMIC, pBufferInfo = *buf_info
                             };
                             vkUpdateDescriptorSets(device, 1, *set_write, 0, null);

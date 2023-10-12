@@ -10,8 +10,7 @@ Global_Descriptor_Set :: struct {
 }
 
 Backdrop :: struct {
-    color: Vector4;
-    distance: Vector4;
+    color: Color;
 }
 
 Vertex :: struct {
@@ -157,6 +156,7 @@ Vulkan_Context :: struct {
     pipeline: Pipeline;
     descriptor_pool : VkDescriptorPool;
     global_descriptor_set: Descriptor_Set;
+    ambient_buffer: Buffer;
     curr_frame : u32;
     image_index : u32;
     camera: Camera;

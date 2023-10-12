@@ -84,9 +84,10 @@ buffer_create_and_copy :: (logical_device: VkDevice, physical_device: VkPhysical
     return out_buffer, true;
 }
 
-buffer_write :: (device: VkDevice, buffer: *Buffer, data: []$T) {
+ buffer_write :: (device: VkDevice, buffer: *Buffer, data: []$T, dynamic_offset := 0) {
     mapped_data : *void;
     vkMapMemory(device, buffer.memory, 0, buffer.size, 0, *mapped_data);
+    mapped_data += dynamic_offset;
     memcpy(mapped_data, data.data, cast(int)buffer.size);
     vkUnmapMemory(device, buffer.memory);
 }
