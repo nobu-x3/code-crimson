@@ -34,6 +34,14 @@ Global_Descriptor_Set :: struct {
     backdrop: Backdrop; @UniformDynamic @Vertex @Fragment
 }
 
+Object_Storage_Descriptor_Set :: struct {
+    render_matrix: Render_Matrix; @Storage @Vertex
+}
+
+Render_Matrix :: struct {
+    matrix: Matrix4;
+}
+
 
 Backdrop :: struct {
     color: Color;

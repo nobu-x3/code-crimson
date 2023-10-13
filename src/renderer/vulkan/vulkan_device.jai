@@ -101,26 +101,28 @@ device_check_extension_support :: (physical_device : VkPhysicalDevice) -> bool {
     vkEnumerateDeviceExtensionProperties(physical_device, null, *ext_count, available_extensions.data);
     #if !DEBUG {
         #if OS == .WINDOWS {
-            extensions: [2] *u8;
+            extensions: [3] *u8;
             extensions[0] = VK_KHR_SURFACE_EXTENSION_NAME.data;
             extensions[1] = VK_KHR_WIN32_SURFACE_EXTENSION_NAME.data;
         } else {
-            extensions: [2] *u8;
+            extensions: [3] *u8;
             extensions[0] = VK_KHR_SURFACE_EXTENSION_NAME.data;
             extensions[1] = VK_KHR_XLIB_SURFACE_EXTENSION_NAME.data;
         }
+        extensions[2] = VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME.data;
     } else {
         #if OS == .WINDOWS {
-            extensions: [3] *u8;
+            extensions: [4] *u8;
             extensions[0] = VK_KHR_SURFACE_EXTENSION_NAME.data;
             extensions[1] = VK_KHR_WIN32_SURFACE_EXTENSION_NAME.data;
             extensions[2] = VK_EXT_DEBUG_REPORT_EXTENSION_NAME.data;
         } else {
-            extensions: [3] *u8;
+            extensions: [4] *u8;
             extensions[0] = VK_KHR_SURFACE_EXTENSION_NAME.data;
             extensions[1] = VK_KHR_XLIB_SURFACE_EXTENSION_NAME.data;
             extensions[2] = VK_EXT_DEBUG_REPORT_EXTENSION_NAME.data;
         }
+        extensions[3] = VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME.data;
     }
     for all_ext:extensions {
         found : bool;
