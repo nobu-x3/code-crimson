@@ -133,6 +133,7 @@ Vulkan_Context :: struct {
     pipeline: Pipeline;
     descriptor_pool : VkDescriptorPool;
     global_descriptor_set: Descriptor_Set;
+    object_storage_set: Descriptor_Set;
     ambient_buffer: Buffer;
     curr_frame : u32;
     image_index : u32;

@@ -55,6 +55,7 @@ main :: () {
 
     set_builder := descriptor_set_builder_init(vulkan_context.device, vulkan_context.physical_device, vulkan_context.swapchain.image_count);
     descriptor_set_builder_add_type(*set_builder, Global_Descriptor_Set);
+    descriptor_set_builder_add_type(*set_builder, Object_Storage_Descriptor_Set);
     vulkan_context.descriptor_pool, res = descriptor_set_builder_create_pool(*set_builder);
     if !res return;
     vulkan_context.global_descriptor_set.layout, res = descriptor_set_builder_build_layout(*set_builder, Global_Descriptor_Set);
@@ -69,8 +70,16 @@ main :: () {
     vulkan_context.ambient_buffer = amb[0];
     defer buffer_destroy(vulkan_context.device, vulkan_context.ambient_buffer);
     defer descriptor_set_destroy(vulkan_context.device, *vulkan_context.global_descriptor_set, *vulkan_context.descriptor_pool);
+    vulkan_context.object_storage_set.layout, res = descriptor_set_builder_build_layout(*set_builder, Object_Storage_Descriptor_Set);
+    if !res return;
+    vulkan_context.object_storage_set.handles, res = descriptor_set_builder_build_set(*set_builder, Object_Storage_Descriptor_Set);
+    if !res return;
+    vulkan_context.object_storage_set.buffers, res = descriptor_set_builder_create_buffer(*set_builder, Object_Storage_Descriptor_Set, Render_Matrix, 1000);
+    if !res return;
+
     builder : Pipeline_Builder;
     pipeline_builder_default(*builder, vulkan_context.device, vulkan_context.main_render_pass, vulkan_context.global_descriptor_set.layout);
+    pipeline_builder_add_descriptor_layout(*builder, vulkan_context.object_storage_set.layout);
     vulkan_context.pipeline, res = pipeline_build(*builder);
     if !res return;
     defer vkDestroyPipelineLayout(vulkan_context.device, vulkan_context.pipeline.layout, null);
@@ -214,6 +223,8 @@ draw_frame :: (using vulkan_context : Vulkan_Context) {
         for it {
             model := rotation_matrix(Matrix4, rot_q);
             model = translate(model, Vector3.{0,  cast(float)(index * 3 + 3), 0});
+            buffer_write(device, *object_storage_set.buffers[curr_frame], Mesh_Push_Constants.[.{render_matrix = model}]);
+            vkCmdBindDescriptorSets(command_buffers[curr_frame], .GRAPHICS, pipeline.layout, 1, 1, *object_storage_set.handles[curr_frame], 0, null);
             push_constants := Mesh_Push_Constants.{render_matrix = model};
             vkCmdPushConstants(command_buffers[curr_frame], pipeline.layout, .VERTEX_BIT, 0, size_of(Mesh_Push_Constants), *push_constants);
             vkCmdDrawIndexed(command_buffers[curr_frame], cast(u32)index_buffer.length, 1, 0, 0, 0);

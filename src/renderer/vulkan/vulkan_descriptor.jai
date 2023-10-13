@@ -101,6 +101,21 @@ descriptor_set_builder_add_type :: (using builder: *Descriptor_Set_Builder, $T: 
                             type = .UNIFORM_BUFFER_DYNAMIC, descriptorCount = image_count * 5 
                         });
                     }
+                case "Storage";
+                    descriptor_type = .STORAGE_BUFFER;
+                    found := false;
+                    for * size:sizes {
+                        if size.type == .STORAGE_BUFFER {
+                            found = true;
+                            size.descriptorCount += image_count;
+                        }
+                    }
+                    if !found {
+                        array_add(*sizes, .{
+                            // @NOTE: not sure if image_count * 5 is good
+                            type = .STORAGE_BUFFER, descriptorCount = image_count * 5 
+                        });
+                    }
                 // shader visibility:
                 case "Vertex";
                     stage_flags |= .VERTEX_BIT;
@@ -183,7 +198,7 @@ descriptor_set_builder_build_set :: (using builder: *Descriptor_Set_Builder, $T:
     return sets, true;
 }
 
-descriptor_set_builder_create_buffer :: (using builder: *Descriptor_Set_Builder, $set: Type, $member: Type) -> [..]Buffer, bool #must 
+descriptor_set_builder_create_buffer :: (using builder: *Descriptor_Set_Builder, $set: Type, $member: Type, buffer_capacity_multiplier := 1) -> [..]Buffer, bool #must 
 // #modify { 
 //     // For reference, the return type of this proc would be $R, bool #must
 //     // This is actually crazy -- allows me to decide what to return based on notes. Kinda makes the function unreadable
@@ -270,6 +285,24 @@ descriptor_set_builder_create_buffer :: (using builder: *Descriptor_Set_Builder,
                             vkUpdateDescriptorSets(device, 1, *set_write, 0, null);
                         }
                         array_add(*buffers, buf);
+                    case "Storage";
+                        assert(buffers.count == 0, "There should only be one type annotation per member.\n");
+                        for frame: 0..image_count - 1 {
+                            buf, res := buffer_create(device, physical_device, ti_member.runtime_size, buffer_capacity_multiplier, .STORAGE_BUFFER_BIT, .DEVICE_LOCAL_BIT);
+                            if !res {
+                                log(.FATAL, "Failed to create buffer for type % when creating descriptor set.", tis_member.name);
+                                return buffers, false; 
+                            }
+                            buf_info := VkDescriptorBufferInfo.{
+                                buffer = buf.handle, offset = 0, range = cast(u64)(ti_member.runtime_size * buffer_capacity_multiplier)
+                            };
+                            set_write := VkWriteDescriptorSet.{
+                                dstBinding = cast(u32)index, dstSet = sets[frame], descriptorCount = 1,
+                                descriptorType = .STORAGE_BUFFER, pBufferInfo = *buf_info
+                            };
+                            vkUpdateDescriptorSets(device, 1, *set_write, 0, null);
+                            array_add(*buffers, buf);
+                        }
                 }
             }
         }
