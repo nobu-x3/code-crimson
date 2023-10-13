@@ -92,6 +92,24 @@ main :: () {
 		.{pos = .[-0.5, 0.5], color = .[1.0, 0.0, 0.0]},
     ];
     indices := u16.[0, 1, 2, 2, 3, 0];
+    mesh1 := Mesh.{};
+    mesh2 := Mesh.{};
+    for vertices {
+        array_add(*mesh1.vertices, it);
+        array_add(*mesh1.vertices, it);
+    }
+    for indices {
+        array_add(*mesh1.indices, it);
+        array_add(*mesh1.indices, it);
+    }
+    material1 := Material.{
+        pipeline = vulkan_context.pipeline
+    };
+    material2 := Material.{
+        pipeline = vulkan_context.pipeline
+    };
+    create_render_object(*vulkan_context, mesh1, material1);
+    create_render_object(*vulkan_context, mesh2, material1);
     vulkan_context.vertex_buffer, res = buffer_create_and_copy(vulkan_context.device, vulkan_context.physical_device, .VERTEX_BUFFER_BIT,
                             vulkan_context.command_pool, vulkan_context.queues[Queue_Family.GRAPHICS], vertices);
     if !res return;
@@ -127,7 +145,7 @@ begin_frame :: (using vulkan_context: *Vulkan_Context, delta_time: float64) {
     ind : u32;
     vkWaitForFences(device, 1, *in_flight[curr_frame], 1, u64_high);
     ind, res = swapchain_acquire_next_image_index(vulkan_context, image_available[curr_frame], null, u64_high);
-    // if !res return;
+    if !res return;
     reset_res := vkResetFences(device, 1, *in_flight[curr_frame]);
     if reset_res != .SUCCESS {
         log(.FATAL, "Failed to reset fence. %", reset_res);
@@ -182,17 +200,39 @@ draw_frame :: (using vulkan_context : Vulkan_Context) {
     }];
     buffer_write(device, *global_descriptor_set.buffers[curr_frame], global_data);
     buffer_write(device, *ambient_buffer, backdrop, ambient_buffer.stride * curr_frame);
-    rot_q : Quaternion = ---; 
-    set_from_axis_and_angle(*rot_q, .{0, 1, 0}, radians(frame_nr * 0.04));
-    model := rotation_matrix(Matrix4, rot_q);
-    push_constants := Mesh_Push_Constants.{render_matrix = model};
-    vkCmdBindPipeline(command_buffers[curr_frame], .GRAPHICS, pipeline.handle);
     uniform_offset := cast(u32)(ambient_buffer.stride * curr_frame);
     vkCmdBindDescriptorSets(command_buffers[curr_frame], .GRAPHICS, pipeline.layout, 0, 1, *global_descriptor_set.handles[curr_frame], 1, *uniform_offset);
     vertex_buffers := VkBuffer.[vertex_buffer.handle];
     offsets := VkDeviceSize.[0];
     vkCmdBindVertexBuffers(command_buffers[curr_frame], 0, 1, vertex_buffers.data, offsets.data);
     vkCmdBindIndexBuffer(command_buffers[curr_frame], index_buffer.handle, 0, .UINT16);
-    vkCmdPushConstants(command_buffers[curr_frame], pipeline.layout, .VERTEX_BIT, 0, size_of(Mesh_Push_Constants), *push_constants);
-    vkCmdDrawIndexed(command_buffers[curr_frame], cast(u32)index_buffer.length, 1, 0, 0, 0);
+    rot_q : Quaternion = ---; 
+    set_from_axis_and_angle(*rot_q, .{0, 1, 0}, radians(frame_nr * 0.04));
+    for material_mesh_map {
+        vkCmdBindPipeline(command_buffers[curr_frame], .GRAPHICS, it_index.pipeline.handle);
+        index := 0;
+        for it {
+            model := rotation_matrix(Matrix4, rot_q);
+            model = translate(model, Vector3.{0,  cast(float)(index * 3 + 3), 0});
+            push_constants := Mesh_Push_Constants.{render_matrix = model};
+            vkCmdPushConstants(command_buffers[curr_frame], pipeline.layout, .VERTEX_BIT, 0, size_of(Mesh_Push_Constants), *push_constants);
+            vkCmdDrawIndexed(command_buffers[curr_frame], cast(u32)index_buffer.length, 1, 0, 0, 0);
+            index += 1;
+        }
+    }
+}
+
+create_render_object :: (vulkan_context: *Vulkan_Context, mesh: Mesh, material: Material) -> bool {
+    if !table_contains(*vulkan_context.material_mesh_map, material) {
+        new_array : [..]Mesh;
+        array_add(*new_array, mesh);
+        table_add(*vulkan_context.material_mesh_map, material, new_array);
+    } else {
+        list := table_find_pointer(*vulkan_context.material_mesh_map, material);
+        if !list return false;
+        array_add(list, mesh);
+        // @TODO: potentially must set the value to list.* because it may have been relocated after addition.
+        // table_set(*vul)
+    }
+    return true;
 }

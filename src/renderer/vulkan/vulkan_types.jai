@@ -3,29 +3,6 @@ WINDOW_WIDTH :: 640;
 WINDOW_HEIGHT :: 480;
 QUEUE_COUNT :: #run enum_highest_value(Queue_Family) + 1;
 
-// Each member represents a new binding
-Global_Descriptor_Set :: struct {
-    camera: Camera; @Uniform @Vertex
-    backdrop: Backdrop; @UniformDynamic @Vertex @Fragment
-}
-
-Backdrop :: struct {
-    color: Color;
-}
-
-Vertex :: struct {
-    pos: [2]float32;
-    color: [3]float32;
-}
-
-Color :: struct {
-    r, g, b, a: float32;
-}
-
-Extent2D :: struct {
-    x, y, w, h: float32;
-}
-
 Buffer :: struct {
     handle: VkBuffer;
     memory: VkDeviceMemory;
@@ -160,7 +137,16 @@ Vulkan_Context :: struct {
     curr_frame : u32;
     image_index : u32;
     camera: Camera;
+    material_mesh_map: Table(Material, [..]Mesh, given_hash_function=material_hash_function, given_compare_function=material_compare);
     #if DEBUG {
         debug_callback_handle : VkDebugReportCallbackEXT;
     }
+}
+
+material_hash_function :: (material: Material) -> u32 {
+    return cast(u32)material.pipeline.handle;
+}
+
+material_compare :: (a: Material, b: Material) -> bool {
+    return a.pipeline.handle == b.pipeline.handle;
 }

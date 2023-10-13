@@ -14,5 +14,40 @@ Transform :: struct {
 }
 
 Mesh :: struct {
+    vertices: [..]Vertex;
+    indices: [..]u16;
+}
 
+Render_Object :: struct {
+    mesh: Mesh;
+    material: Material;
+    transform: Matrix4;
+}
+
+Material :: struct {
+    pipeline : Pipeline;
+}
+
+// Each member represents a new binding
+Global_Descriptor_Set :: struct {
+    camera: Camera; @Uniform @Vertex
+    backdrop: Backdrop; @UniformDynamic @Vertex @Fragment
+}
+
+
+Backdrop :: struct {
+    color: Color;
+}
+
+Vertex :: struct {
+    pos: [2]float32;
+    color: [3]float32;
+}
+
+Color :: struct {
+    r, g, b, a: float32;
+}
+
+Extent2D :: struct {
+    x, y, w, h: float32;
 }
