@@ -27,9 +27,9 @@ descriptor_set_destroy :: (device: VkDevice, set: *Descriptor_Set, pool: *VkDesc
 Descriptor_Set_Builder :: struct {
     device: VkDevice;
     physical_device: VkPhysicalDevice;
-    binding_map: Table(string, [..]VkDescriptorSetLayoutBinding);
-    layout_map: Table(string, VkDescriptorSetLayout);
-    set_map: Table(string, [..]VkDescriptorSet);
+    binding_map: Table(*Type_Info, [..]VkDescriptorSetLayoutBinding);
+    layout_map: Table(*Type_Info, VkDescriptorSetLayout);
+    set_map: Table(*Type_Info, [..]VkDescriptorSet);
     sizes : [..]VkDescriptorPoolSize;
     pool: VkDescriptorPool;
     props : VkPhysicalDeviceProperties;
@@ -57,7 +57,7 @@ descriptor_set_builder_add_type :: (using builder: *Descriptor_Set_Builder, $T: 
     ti := type_info(T);
     assert(ti.type == .STRUCT, "Can only create descriptor sets from structs.\n");
     tis := cast(*Type_Info_Struct)ti;
-    assert(!table_contains(*binding_map, tis.name), "Trying to add duplicate type to descriptor set builder.\n");
+    assert(!table_contains(*binding_map, tis), "Trying to add duplicate type to descriptor set builder.\n");
     set_bindings : [..]VkDescriptorSetLayoutBinding;
     set_bindings.allocator = temp;
     array_reserve(*set_bindings, 8);
@@ -116,7 +116,7 @@ descriptor_set_builder_add_type :: (using builder: *Descriptor_Set_Builder, $T: 
         };
         array_add(*set_bindings, binding);
     }
-    table_add(*binding_map, tis.name, set_bindings);
+    table_add(*binding_map, tis, set_bindings);
 }
 
 descriptor_set_builder_create_pool :: (using builder: *Descriptor_Set_Builder) -> VkDescriptorPool, bool #must {
@@ -140,10 +140,10 @@ descriptor_set_builder_build_layout :: (using builder: *Descriptor_Set_Builder, 
     ti := type_info(T);
     assert(ti.type == .STRUCT, "Can only create descriptor sets from structs.\n");
     tis := cast(*Type_Info_Struct)ti;
-    assert(table_contains(*binding_map, tis.name), "Trying to build a layout from type % that was not previously added. Descriptor pool is probably missing something. Please call descriptor_set_builder_add_type before building.\n", tis.name);
-    assert(!table_contains(*layout_map, tis.name), "Trying to create duplicate descriptor set layout for type %.\n", tis.name);
+    assert(table_contains(*binding_map, tis), "Trying to build a layout from type % that was not previously added. Descriptor pool is probably missing something. Please call descriptor_set_builder_add_type before building.\n", tis.name);
+    assert(!table_contains(*layout_map, ti), "Trying to create duplicate descriptor set layout for type %.\n", tis.name);
     layout : VkDescriptorSetLayout;
-    bindings := table_find_pointer(*binding_map, tis.name);
+    bindings := table_find_pointer(*binding_map, tis);
     layout_ci := VkDescriptorSetLayoutCreateInfo.{
         bindingCount = cast(u32)bindings.count, pBindings = bindings.data
     };
@@ -152,7 +152,7 @@ descriptor_set_builder_build_layout :: (using builder: *Descriptor_Set_Builder, 
         log(.FATAL, "Failed to create descriptor set layout for type %. %", tis.name, res);
         return layout, false;
     }
-    table_add(*layout_map, tis.name, layout);
+    table_add(*layout_map, ti, layout);
     return layout, true;
 }
 
@@ -160,9 +160,9 @@ descriptor_set_builder_build_set :: (using builder: *Descriptor_Set_Builder, $T:
     ti := type_info(T);
     assert(ti.type == .STRUCT, "Can only create descriptor sets from structs.\n");
     tis := cast(*Type_Info_Struct)ti;
-    assert(table_contains(*layout_map, tis.name), "Trying to build a layout from a type that was not previously added. Descriptor pool is probably missing something. Please call descriptor_set_builder_add_type before building.\n");
-    if(table_contains(*set_map, tis.name)) {
-        sets, res := table_find(*set_map, tis.name);
+    assert(table_contains(*layout_map, ti), "Trying to build a layout from a type that was not previously added. Descriptor pool is probably missing something. Please call descriptor_set_builder_add_type before building.\n");
+    if(table_contains(*set_map, ti)) {
+        sets, res := table_find(*set_map, ti);
         return sets, res;
     }
     sets : [..]VkDescriptorSet;
@@ -170,7 +170,7 @@ descriptor_set_builder_build_set :: (using builder: *Descriptor_Set_Builder, $T:
     for 0..image_count {
         set : VkDescriptorSet;
         alloc_info := VkDescriptorSetAllocateInfo.{
-            descriptorPool = pool, descriptorSetCount = 1, pSetLayouts = table_find_pointer(*layout_map, tis.name)
+            descriptorPool = pool, descriptorSetCount = 1, pSetLayouts = table_find_pointer(*layout_map, ti)
         };
         res := vkAllocateDescriptorSets(device, *alloc_info, *set);
         if res != .SUCCESS {
@@ -179,7 +179,7 @@ descriptor_set_builder_build_set :: (using builder: *Descriptor_Set_Builder, $T:
         }
         array_add(*sets, set);
     }
-    table_add(*set_map, tis.name, sets);
+    table_add(*set_map, ti, sets);
     return sets, true;
 }
 
@@ -225,7 +225,7 @@ descriptor_set_builder_create_buffer :: (using builder: *Descriptor_Set_Builder,
     tis_member := cast(*Type_Info_Struct)ti_member;
     buffers : [..]Buffer;
     found := false;
-    sets, sets_res := table_find(*set_map, tis_set.name);
+    sets, sets_res := table_find(*set_map, ti_set);
     // @TODO: updating descriptor sets separately is inefficient.
     for member,index:tis_set.members {
         if member.type == ti_member {
@@ -258,7 +258,7 @@ descriptor_set_builder_create_buffer :: (using builder: *Descriptor_Set_Builder,
                             return buffers, false; 
                         }
                         array_add(*buffers, buf);
-                        set := table_find_pointer(*set_map, tis_set.name);
+                        set := table_find_pointer(*set_map, ti_set);
                         for frame:0..image_count {
                             buf_info := VkDescriptorBufferInfo.{
                                 buffer = buf.handle, offset = 0, range = cast(u64)ti_member.runtime_size
