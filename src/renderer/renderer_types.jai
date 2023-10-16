@@ -48,8 +48,7 @@ Backdrop :: struct {
 }
 
 Vertex :: struct {
-    pos: [2]float32;
-    color: [3]float32;
+    pos: [3]float32;
 }
 
 Color :: struct {

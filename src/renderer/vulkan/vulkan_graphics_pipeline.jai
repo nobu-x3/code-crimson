@@ -57,7 +57,7 @@ pipeline_builder_default:: (using builder: *Pipeline_Builder, logical_device: Vk
         .{
             binding = 0,
             location = 0,
-            format = .R32G32_SFLOAT,
+            format = .R32G32B32_SFLOAT,
             offset = 0
         }
     );
@@ -76,7 +76,7 @@ pipeline_builder_default:: (using builder: *Pipeline_Builder, logical_device: Vk
     };
     rasterizer_ci = VkPipelineRasterizationStateCreateInfo.{
         depthClampEnable = 0, rasterizerDiscardEnable = 0, polygonMode = .FILL,
-        lineWidth = 1.0, cullMode = .BACK_BIT, frontFace = .CLOCKWISE, depthBiasEnable = 0,
+        lineWidth = 1.0, cullMode = .BACK_BIT, frontFace = .COUNTER_CLOCKWISE, depthBiasEnable = 0,
         depthBiasConstantFactor = 0.0, depthBiasClamp = 0.0, depthBiasSlopeFactor = 0.0
     };
     multisampling_ci = VkPipelineMultisampleStateCreateInfo.{
@@ -84,7 +84,7 @@ pipeline_builder_default:: (using builder: *Pipeline_Builder, logical_device: Vk
         pSampleMask = null, alphaToCoverageEnable = 0, alphaToOneEnable = 0
     };
     depth_stencil_ci = VkPipelineDepthStencilStateCreateInfo.{
-        depthTestEnable = 1, depthWriteEnable = 1, depthCompareOp = .LESS,
+        depthTestEnable = 1, depthWriteEnable = 1, depthCompareOp = .LESS_OR_EQUAL,
         depthBoundsTestEnable = 0, stencilTestEnable = 0
     };
     color_blend_attach_state = VkPipelineColorBlendAttachmentState.{

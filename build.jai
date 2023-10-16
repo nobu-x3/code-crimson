@@ -14,6 +14,7 @@ build :: (){
         set_optimization(*options, .DEBUG);
         array_add(*import_path, .. options.import_path);
         array_add(*import_path, "./modules");
+        array_add(*import_path, "./modules/gltf-parser/modules");
         options.import_path = import_path;
         options.output_path = "./bin/";
         options.output_executable_name = "code-crimson";

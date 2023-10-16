@@ -5,6 +5,7 @@
 #import "Window_Creation";
 #import "Input";
 #import "Math";
+#import "gltf-parser";
 #load "core/logger.jai";
 #load "renderer/vulkan/vulkan_basics.jai";
 #load "renderer/renderer_types.jai";
@@ -94,21 +95,45 @@ main :: () {
             vkDestroyFence(vulkan_context.device, vulkan_context.in_flight[it], null);
         }
     }
-    vertices := Vertex.[
-		.{pos = .[-0.5, -0.5], color = .[0.0, 0.0, 1.0]},
-		.{pos = .[0.5, -0.5], color = .[1.0, 0.0, 0.0]},
-		.{pos = .[0.5, 0.5], color = .[0.0, 1.0, 0.0]},
-		.{pos = .[-0.5, 0.5], color = .[1.0, 0.0, 0.0]},
-    ];
-    indices := u16.[0, 1, 2, 2, 3, 0];
+
+    // vertices := Vertex.[
+		// .{pos = .[-0.5, -0.5, 0], },
+		// .{pos = .[0.5, -0.5, 0], },
+		// .{pos = .[0.5, 0.5, 0], },
+		// .{pos = .[-0.5, 0.5, 0], },
+    // ];
+    // indices := u16.[0, 1, 2, 2, 3, 0];
+    gltf_data := gltf_parse_file("assets/models/untitled.gltf");
+    defer gltf_free(*gltf_data);
+    gltf_load_buffers(*gltf_data);
+    vertex_data : [..] float;
+    indices : [..] u16;
+    vertices : [..] Vertex;
+    data := gltf_data.meshes[0];
+    for primitive: data.primitives {
+        using primitive;
+        if position_accessor != -1 {
+            accessor := gltf_data.accessors[position_accessor];
+            read_buffer_from_accessor(*gltf_data, accessor, *vertex_data);
+        }
+        if indices_accessor != -1 {
+            accessor := gltf_data.accessors[indices_accessor];
+            read_buffer_from_accessor(*gltf_data, accessor, *indices);
+        }
+    }
+    index := 0;
+    while (index < vertex_data.count){
+        vertex := Vertex.{
+            pos = .[vertex_data[index], vertex_data[index + 1], vertex_data[index + 2]]
+        };
+        array_add(*vertices, vertex);
+        index += 3;
+    }
     mesh1 := Mesh.{};
-    mesh2 := Mesh.{};
     for vertices {
-        array_add(*mesh1.vertices, it);
         array_add(*mesh1.vertices, it);
     }
     for indices {
-        array_add(*mesh1.indices, it);
         array_add(*mesh1.indices, it);
     }
     material1 := Material.{
@@ -118,7 +143,6 @@ main :: () {
         pipeline = vulkan_context.pipeline
     };
     create_render_object(*vulkan_context, mesh1, material1);
-    create_render_object(*vulkan_context, mesh2, material1);
     vulkan_context.vertex_buffer, res = buffer_create_and_copy(vulkan_context.device, vulkan_context.physical_device, .VERTEX_BUFFER_BIT,
                             vulkan_context.command_pool, vulkan_context.queues[Queue_Family.GRAPHICS], vertices);
     if !res return;
@@ -197,7 +221,7 @@ end_frame :: (using vulkan_context: *Vulkan_Context) {
 frame_nr := 0;
 
 draw_frame :: (using vulkan_context : Vulkan_Context) {
-    cam_pos := Vector3.{0, 0, -10};
+    cam_pos := Vector3.{0, 0, -100};
     view := make_translation_matrix4(cam_pos);
     camera.view_proj = camera.projection * view;
     global_data := Global_Descriptor_Set.[.{
@@ -205,7 +229,8 @@ draw_frame :: (using vulkan_context : Vulkan_Context) {
     }];
     framed := frame_nr / 120.0;
     backdrop := Backdrop.[.{
-        color = .{r = sin(framed), g = 0, b = cos(framed), a = 1}
+        // color = .{r = sin(framed), g = 0, b = cos(framed), a = 1}
+        color = .{r = 1, g = 1, b = 1, a = 1}
     }];
     buffer_write(device, *global_descriptor_set.buffers[curr_frame], global_data);
     buffer_write(device, *ambient_buffer, backdrop, ambient_buffer.stride * curr_frame);
@@ -216,14 +241,15 @@ draw_frame :: (using vulkan_context : Vulkan_Context) {
     vkCmdBindVertexBuffers(command_buffers[curr_frame], 0, 1, vertex_buffers.data, offsets.data);
     vkCmdBindIndexBuffer(command_buffers[curr_frame], index_buffer.handle, 0, .UINT16);
     rot_q : Quaternion = ---; 
-    set_from_axis_and_angle(*rot_q, .{0, 1, 0}, radians(frame_nr * 0.04));
+    // set_from_axis_and_angle(*rot_q, .{0, 1, 0}, radians(frame_nr * 0.04));
+    set_from_axis_and_angle(*rot_q, .{0, 1, 0}, radians(0));
     for material_mesh_map {
         vkCmdBindPipeline(command_buffers[curr_frame], .GRAPHICS, it_index.pipeline.handle);
         index := 0;
         for it {
             model := rotation_matrix(Matrix4, rot_q);
             model = translate(model, Vector3.{0,  cast(float)(index * 3 + 3), 0});
-            buffer_write(device, *object_storage_set.buffers[curr_frame], Mesh_Push_Constants.[.{render_matrix = model}]);
+            buffer_write(device, *object_storage_set.buffers[curr_frame], Mesh_Push_Constants.[.{render_matrix = model}], index * size_of(Render_Matrix));
             vkCmdBindDescriptorSets(command_buffers[curr_frame], .GRAPHICS, pipeline.layout, 1, 1, *object_storage_set.handles[curr_frame], 0, null);
             push_constants := Mesh_Push_Constants.{render_matrix = model};
             vkCmdPushConstants(command_buffers[curr_frame], pipeline.layout, .VERTEX_BIT, 0, size_of(Mesh_Push_Constants), *push_constants);

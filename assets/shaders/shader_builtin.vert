@@ -24,6 +24,7 @@ layout(std140,set = 1, binding = 0) readonly buffer ObjectBuffer{
 
 void main () {
     mat4 modelMatrix = objectBuffer.objects[gl_BaseInstance].model;
+    //mat4 modelMatrix = push_constants.render_matrix;
     mat4 transformMatrix = (modelMatrix * cameraData.viewproj);
 	gl_Position = transformMatrix * vec4 (in_position, 1.0);
 }

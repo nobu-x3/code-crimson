@@ -26,10 +26,10 @@ vulkan_device_create :: (vulkan_context: *Vulkan_Context) -> bool #must {
     }
     device_features : VkPhysicalDeviceFeatures;
     device_ci : VkDeviceCreateInfo;
-    device_ci.enabledExtensionCount = 1;
+    device_ci.enabledExtensionCount = 2;
     // @TODO: fix this, should not be so ugly
-    ext_names := "VK_KHR_swapchain".data;
-    device_ci.ppEnabledExtensionNames = *ext_names;
+    ext_names := *u8.["VK_KHR_swapchain".data, "VK_KHR_shader_draw_parameters".data];
+    device_ci.ppEnabledExtensionNames = ext_names.data;
     device_ci.pQueueCreateInfos = q_cis.data;
     device_ci.queueCreateInfoCount = cast(u32)q_cis.count;
     device_ci.pEnabledFeatures = *device_features;
