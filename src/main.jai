@@ -221,7 +221,7 @@ end_frame :: (using vulkan_context: *Vulkan_Context) {
 frame_nr := 0;
 
 draw_frame :: (using vulkan_context : Vulkan_Context) {
-    cam_pos := Vector3.{0, 0, -10};
+    cam_pos := Vector3.{0, 0, -5};
     view := make_translation_matrix4(cam_pos);
     camera.view_proj = camera.projection * view;
     global_data := Global_Descriptor_Set.[.{

@@ -24,7 +24,7 @@ vulkan_device_create :: (vulkan_context: *Vulkan_Context) -> bool #must {
         q_ci.pQueuePriorities = *q_prio;
         array_add(*q_cis, q_ci);
     }
-    device_features : VkPhysicalDeviceFeatures;
+    device_features := VkPhysicalDeviceFeatures.{depthClamp = 1};
     device_ci : VkDeviceCreateInfo;
     device_ci.enabledExtensionCount = 2;
     // @TODO: fix this, should not be so ugly
