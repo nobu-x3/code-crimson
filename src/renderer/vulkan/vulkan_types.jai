@@ -1,6 +1,6 @@
 MAX_FRAMES_IN_FLIGHT :: 3;
-WINDOW_WIDTH :: 640;
-WINDOW_HEIGHT :: 480;
+WINDOW_WIDTH :: 800;
+WINDOW_HEIGHT :: 600;
 QUEUE_COUNT :: #run enum_highest_value(Queue_Family) + 1;
 
 Buffer :: struct {

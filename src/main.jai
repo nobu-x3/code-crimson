@@ -52,7 +52,7 @@ main :: () {
     if !res return;
     defer render_pass_destroy(vulkan_context.device, *vulkan_context.main_render_pass);
     create_command_buffers_default(*vulkan_context);
-    vulkan_context.camera = camera_create(radians(70.0), cast(float)WINDOW_WIDTH/WINDOW_HEIGHT, 0.1, 1000);
+    vulkan_context.camera = camera_create(radians(100.0), cast(float)WINDOW_WIDTH/WINDOW_HEIGHT, 0.1, 1000);
 
     set_builder := descriptor_set_builder_init(vulkan_context.device, vulkan_context.physical_device, vulkan_context.swapchain.image_count);
     descriptor_set_builder_add_type(*set_builder, Global_Descriptor_Set);
@@ -241,14 +241,14 @@ draw_frame :: (using vulkan_context : Vulkan_Context) {
     vkCmdBindVertexBuffers(command_buffers[curr_frame], 0, 1, vertex_buffers.data, offsets.data);
     vkCmdBindIndexBuffer(command_buffers[curr_frame], index_buffer.handle, 0, .UINT16);
     rot_q : Quaternion = ---; 
-    // set_from_axis_and_angle(*rot_q, .{0, 1, 0}, radians(frame_nr * 0.04));
-    set_from_axis_and_angle(*rot_q, .{0, 1, 0}, radians(0));
+    set_from_axis_and_angle(*rot_q, .{0, 1, 0}, radians(frame_nr * 0.04));
+    // set_from_axis_and_angle(*rot_q, .{0, 1, 0}, radians(0));
     for material_mesh_map {
         vkCmdBindPipeline(command_buffers[curr_frame], .GRAPHICS, it_index.pipeline.handle);
         index := 0;
         for it {
             model := rotation_matrix(Matrix4, rot_q);
-            model = translate(model, Vector3.{0,  cast(float)(index * 3 + 3), 0});
+            // model = translate(model, Vector3.{0,  cast(float)(index * 3 + 3), 0});
             buffer_write(device, *object_storage_set.buffers[curr_frame], Mesh_Push_Constants.[.{render_matrix = model}], index * size_of(Render_Matrix));
             vkCmdBindDescriptorSets(command_buffers[curr_frame], .GRAPHICS, pipeline.layout, 1, 1, *object_storage_set.handles[curr_frame], 0, null);
             push_constants := Mesh_Push_Constants.{render_matrix = model};

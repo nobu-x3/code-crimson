@@ -5,7 +5,7 @@ Camera :: struct {
 }    
 
 camera_create :: (fov: float, aspect: float, near: float, far: float) -> Camera {
-    camera := Camera.{projection = make_projection_matrix(fov, aspect, near, far)};
+    camera := Camera.{projection = make_projection_matrix(fov, aspect, near, far, depth_range_01 = true)};
     camera.projection._11 *= -1;
     return camera;
 }

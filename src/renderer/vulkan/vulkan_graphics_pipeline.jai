@@ -61,21 +61,13 @@ pipeline_builder_default:: (using builder: *Pipeline_Builder, logical_device: Vk
             offset = 0
         }
     );
-    array_add(*vertex_attribute_descs, 
-        .{
-            binding = 0,
-            location = 1,
-            format = .R32G32B32_SFLOAT,
-            offset = size_of([3]float32)
-        }
-    );
     vertex_input_ci = VkPipelineVertexInputStateCreateInfo.{
         vertexBindingDescriptionCount = 1, pVertexBindingDescriptions = *vertex_binding_desc,
         vertexAttributeDescriptionCount = cast(u32)vertex_attribute_descs.count,
         pVertexAttributeDescriptions = vertex_attribute_descs.data
     };
     rasterizer_ci = VkPipelineRasterizationStateCreateInfo.{
-        depthClampEnable = 1, rasterizerDiscardEnable = 0, polygonMode = .FILL,
+        depthClampEnable = 0, rasterizerDiscardEnable = 0, polygonMode = .FILL,
         lineWidth = 1.0, cullMode = .BACK_BIT, frontFace = .COUNTER_CLOCKWISE, depthBiasEnable = 0,
         depthBiasConstantFactor = 0.0, depthBiasClamp = 0.0, depthBiasSlopeFactor = 0.0
     };
