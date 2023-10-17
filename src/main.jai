@@ -103,7 +103,7 @@ main :: () {
 		// .{pos = .[-0.5, 0.5, 0], },
     // ];
     // indices := u16.[0, 1, 2, 2, 3, 0];
-    gltf_data := gltf_parse_file("assets/models/untitled.gltf");
+    gltf_data := gltf_parse_file("assets/models/box/Box.gltf");
     defer gltf_free(*gltf_data);
     gltf_load_buffers(*gltf_data);
     vertex_data : [..] float;
@@ -124,7 +124,7 @@ main :: () {
     index := 0;
     while (index < vertex_data.count){
         vertex := Vertex.{
-            pos = .[vertex_data[index], vertex_data[index + 1], vertex_data[index + 2]]
+            pos = .[vertex_data[index], vertex_data[index + 1], (vertex_data[index + 2] + 1) * 0.5]
         };
         array_add(*vertices, vertex);
         index += 3;
@@ -221,7 +221,7 @@ end_frame :: (using vulkan_context: *Vulkan_Context) {
 frame_nr := 0;
 
 draw_frame :: (using vulkan_context : Vulkan_Context) {
-    cam_pos := Vector3.{0, 0, -100};
+    cam_pos := Vector3.{0, 0, -10};
     view := make_translation_matrix4(cam_pos);
     camera.view_proj = camera.projection * view;
     global_data := Global_Descriptor_Set.[.{

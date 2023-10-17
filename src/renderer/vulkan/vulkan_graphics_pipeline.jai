@@ -66,7 +66,7 @@ pipeline_builder_default:: (using builder: *Pipeline_Builder, logical_device: Vk
             binding = 0,
             location = 1,
             format = .R32G32B32_SFLOAT,
-            offset = size_of([2]float32)
+            offset = size_of([3]float32)
         }
     );
     vertex_input_ci = VkPipelineVertexInputStateCreateInfo.{
@@ -75,7 +75,7 @@ pipeline_builder_default:: (using builder: *Pipeline_Builder, logical_device: Vk
         pVertexAttributeDescriptions = vertex_attribute_descs.data
     };
     rasterizer_ci = VkPipelineRasterizationStateCreateInfo.{
-        depthClampEnable = 0, rasterizerDiscardEnable = 0, polygonMode = .FILL,
+        depthClampEnable = 1, rasterizerDiscardEnable = 0, polygonMode = .FILL,
         lineWidth = 1.0, cullMode = .BACK_BIT, frontFace = .COUNTER_CLOCKWISE, depthBiasEnable = 0,
         depthBiasConstantFactor = 0.0, depthBiasClamp = 0.0, depthBiasSlopeFactor = 0.0
     };
